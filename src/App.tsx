@@ -411,7 +411,7 @@ export function App() {
     return <AuthGateRedirect to="/home" />;
   }
 
-  const protectedPaths = new Set(["/home", "/write-letter", "/waiting-letters", "/mailbox", "/my-space", "/saved-excerpts", "/received-replies", "/anonymous-name-settings", "/account-settings", "/login-information", "/data-and-privacy", "/account-withdrawal", "/notifications", "/notification-settings", "/safety-management", "/service-guide", "/safety-guide", "/privacy-policy", "/app-info", "/prototype/mailbox-list-lab", "/prototype/waiting-letters-list-lab", "/letter-safety-review"]);
+  const protectedPaths = new Set(["/home", "/write-letter", "/listen-entry-a", "/waiting-letters", "/mailbox", "/my-space", "/saved-excerpts", "/received-replies", "/anonymous-name-settings", "/account-settings", "/login-information", "/data-and-privacy", "/account-withdrawal", "/notifications", "/notification-settings", "/safety-management", "/service-guide", "/safety-guide", "/privacy-policy", "/app-info", "/prototype/mailbox-list-lab", "/prototype/waiting-letters-list-lab", "/letter-safety-review"]);
   const protectedFlowPrefixes = ["/gratitude/", "/report-reply/", "/return-letter/", "/reply-safety-review/", "/reply-sending/", "/report-letter/", "/report-letter-figma/", "/report-letter-legacy/", "/read-letter/", "/assigned-letter/", "/assign-letter/", "/write-reply/", "/reply-review/", "/reply-sent/", "/letter-journey/", "/reply-arrived/", "/letter-delay/", "/letter-withdrawn/", "/mailbox/my/", "/mailbox/replied/"];
   const isProtectedServicePath = protectedPaths.has(path) || ["/letter-preview", "/letter-sent", "/reader-promise", "/urgent-support"].includes(path) || protectedFlowPrefixes.some((prefix) => path.startsWith(prefix));
   if (isProtectedServicePath && !isMockAuthenticated()) {

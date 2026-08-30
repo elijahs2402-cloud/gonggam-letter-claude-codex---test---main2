@@ -7431,36 +7431,27 @@ button:focus-visible {
 .common-state-screen { display: flex; min-height: 100dvh; flex-direction: column; background: var(--paper); }.common-state { display: grid; min-height: 330px; align-content: center; justify-items: center; padding: 56px 30px; text-align: center; }.common-state.is-compact { min-height: 285px; padding: 42px 10px; }.common-state-mark { display: grid; width: 27px; height: 27px; place-items: center; margin-bottom: 19px; border: 1px solid rgba(188,146,62,.7); border-radius: 50%; color: var(--deep-plum); font: 400 19px "Noto Serif KR", serif; }.common-state--error .common-state-mark, .common-state--offline .common-state-mark { border-color: rgba(168,86,61,.58); color: var(--terracotta); }.common-state h1 { margin: 0; font: 400 22px/1.45 "Noto Serif KR", serif; letter-spacing: -.05em; }.common-state p { max-width: 270px; margin: 12px 0 0; color: var(--muted-ink); font: 12px/1.7 Pretendard, sans-serif; }.common-state-actions { display: grid; width: min(100%, 250px); gap: 10px; margin-top: 25px; }.common-state-actions .flow-primary-button { width: 100%; }.common-state-developer { margin-top: 23px; color: var(--muted-ink); font: 10px Pretendard, sans-serif; }.common-state-skeleton { display: grid; width: 100%; max-width: 290px; gap: 10px; margin-bottom: 26px; }.common-state-skeleton i { display: block; height: 12px; background: rgba(123,91,166,.09); }.common-state-skeleton i:first-child { width: 56%; height: 18px; }.common-state-skeleton i:last-child { width: 77%; }
 
 /* Home action notice: a centred, quiet paper layer. */
-.home-floating-notice {
-  position: fixed;
-  top: 50%;
-  right: 24px;
-  left: 24px;
-  z-index: 30;
-  max-width: 342px;
-  margin: 0 auto;
-  padding: 27px 30px 24px;
+.home-notice-card {
+  position: relative;
+  margin: 26px 11px 0;
+  padding: 20px 22px 18px;
   border: 1px solid rgba(50, 39, 31, 0.76);
   background-color: #fffdf8;
   background-image: linear-gradient(rgba(255, 253, 248, 0.92), rgba(255, 253, 248, 0.92)), url("/assets/paper-pattern.jpg");
   background-size: auto, 360px auto;
   color: var(--ink);
-  box-shadow: 7px 8px 0 rgba(105, 89, 65, 0.24);
-  transform: translateY(-50%);
+  box-shadow: 5px 6px 0 rgba(105, 89, 65, 0.2);
   animation: home-notice-enter 480ms cubic-bezier(0.22, 0.75, 0.33, 1) both;
 }
-.home-floating-notice::after {
-  content: none;
-}
-.home-floating-notice strong { display: block; max-width: 235px; font: 500 18px/1.43 "Noto Serif KR", serif; letter-spacing: -0.045em; }
-.home-floating-notice p { max-width: 250px; margin: 9px 0 17px; color: var(--muted-ink); font: 12px/1.65 Pretendard, sans-serif; }
-.home-floating-action { position: relative; z-index: 1; min-height: auto; padding: 0 2px 4px; border: 0; border-bottom: 1px solid rgba(74,45,87,.48); background: transparent; color: var(--deep-plum); font: 600 12px/1.25 Pretendard, sans-serif; }
-.home-floating-dismiss { position: absolute; z-index: 1; top: 6px; right: 6px; width: 44px; height: 44px; border: 0; background: transparent; color: var(--muted-ink); font: 23px/1 Pretendard, sans-serif; }
+.home-notice-card strong { display: block; padding-right: 40px; font: 500 18px/1.43 "Noto Serif KR", serif; letter-spacing: -0.03em; word-break: keep-all; }
+.home-notice-card p { margin: 9px 0 16px; color: var(--muted-ink); font: 14px/1.7 Pretendard, sans-serif; word-break: keep-all; }
+.home-notice-action { position: relative; z-index: 1; min-height: 44px; padding: 0 2px 4px; border: 0; background: transparent; color: var(--deep-plum); font: 700 14px/1.25 Pretendard, sans-serif; text-decoration: underline; text-underline-offset: 5px; }
+.home-notice-dismiss { position: absolute; z-index: 1; top: 4px; right: 4px; width: 44px; height: 44px; border: 0; background: transparent; color: var(--muted-ink); font: 23px/1 Pretendard, sans-serif; cursor: pointer; }
 .app-bottom-navigation button { position: relative; }
 .app-nav-notice-dot { position: absolute; top: 5px; right: calc(50% - 18px); width: 8px; height: 8px; border: 2px solid var(--paper); border-radius: 50%; background: var(--deep-plum); box-sizing: content-box; }
 .home-notification-button i:empty { top: 5px; right: 4px; min-width: 0; width: 8px; height: 8px; padding: 0; display: block; border: 2px solid var(--paper); border-radius: 50%; background: var(--deep-plum); box-sizing: content-box; }
-@keyframes home-notice-enter { from { opacity: 0; transform: translateY(calc(-50% + 16px)); } to { opacity: 1; transform: translateY(-50%); } }
-@media (prefers-reduced-motion: reduce) { .home-floating-notice { animation-duration: 120ms; } }
+@keyframes home-notice-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .home-notice-card { animation-duration: 120ms; } }
 
 /* Confirmed A bottom-navigation icon set. */
 .app-bottom-navigation button .app-nav-mark {

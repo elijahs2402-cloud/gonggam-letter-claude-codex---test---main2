@@ -128,15 +128,18 @@ function FixedActions({
 function ListenEntryFrame({
   variant,
   className,
+  // B and C remain pinned to the single sample letter they were designed against.
+  meetPath = "/read-letter/sample-waiting-letter-one",
   children,
 }: {
   variant: ListenVariant;
   className: string;
+  meetPath?: string;
   children: ReactNode;
 }) {
   const state = getInitialState();
   function meetLetter() {
-    goTo("/read-letter/sample-waiting-letter-one");
+    goTo(meetPath);
   }
 
   const content =
@@ -153,7 +156,7 @@ function ListenEntryFrame({
 
 export function ListenEntryAScreen() {
   return (
-    <ListenEntryFrame variant="A" className="listen-entry-a">
+    <ListenEntryFrame variant="A" className="listen-entry-a" meetPath="/waiting-letters">
       <>
         <ListenHeading
           showBrand={false}
