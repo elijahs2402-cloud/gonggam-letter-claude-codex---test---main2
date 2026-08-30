@@ -68,7 +68,12 @@
 
   --focus-ring: var(--gold);
   --nav-inactive: #756a5f;
-  --active-navigation-icon-filter: invert(22%) sepia(15%) saturate(1761%) hue-rotate(232deg) brightness(91%) contrast(92%);
+
+  /* The framed-paper card: a thin gold rule with a paper mat around it. The mat
+     colour stays per-surface so it reads as a margin of the page it sits on;
+     the rule and the mat width are shared. */
+  --frame-rule: rgba(188, 146, 62, 0.5);
+  --frame-mat-width: 7px;
 
   /* Type scale. 12px is the floor for any UI text, 13px for anything read as prose. */
   --fs-tab: 12px;
@@ -838,9 +843,9 @@ button:focus-visible {
 .home-screen .home-choice--primary {
   min-height: 397px;
   padding: 15px 12px;
-  border: 8px solid rgba(255, 253, 248, 0.9);
+  border: var(--frame-mat-width) solid rgba(255, 253, 248, 0.9);
   background: rgba(255, 252, 246, 0.84);
-  box-shadow: inset 0 0 0 1px rgba(188, 146, 62, 0.58);
+  box-shadow: inset 0 0 0 1px var(--frame-rule);
 }
 
 .home-screen .home-choice-copy {
@@ -1037,77 +1042,20 @@ button:focus-visible {
   font-weight: 700;
 }
 
+/* The bottom-navigation marks are the shipped PNG artwork, painted through a
+   mask so the icon takes its colour from the button instead of a filter chain. */
 .app-nav-mark {
-  position: relative;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: block;
-  color: currentColor;
-  object-fit: contain;
+  background-color: currentColor;
+  -webkit-mask: var(--nav-mark) center / contain no-repeat;
+  mask: var(--nav-mark) center / contain no-repeat;
 }
 
-.app-nav-mark--home::before {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 5px;
-  width: 11px;
-  height: 9px;
-  border: 1px solid currentColor;
-  border-top: 0;
-}
-
-.app-nav-mark--home::after {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 2px;
-  width: 10px;
-  height: 10px;
-  border-top: 1px solid currentColor;
-  border-left: 1px solid currentColor;
-  transform: rotate(45deg);
-}
-
-.app-nav-mark--mailbox {
-  border-top: 1px solid currentColor;
-  border-bottom: 1px solid currentColor;
-}
-
-.app-nav-mark--mailbox::before,
-.app-nav-mark--mailbox::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  width: 100%;
-  border-top: 1px solid currentColor;
-}
-
-.app-nav-mark--mailbox::before { top: 5px; }
-.app-nav-mark--mailbox::after { bottom: 4px; }
-
-.app-nav-mark--space::before {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 2px;
-  width: 11px;
-  height: 11px;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-}
-
-.app-nav-mark--space::after {
-  content: "";
-  position: absolute;
-  left: 1px;
-  bottom: 1px;
-  width: 15px;
-  height: 7px;
-  border: 1px solid currentColor;
-  border-bottom: 0;
-  border-radius: 12px 12px 0 0;
-}
+.app-nav-mark--home { --nav-mark: url("/assets/home_icon.png"); }
+.app-nav-mark--mailbox { --nav-mark: url("/assets/letter_icon.png"); }
+.app-nav-mark--space { --nav-mark: url("/assets/notebook_icon.png"); }
 
 @media (hover: hover) {
   .mailbox-record:hover,
@@ -5529,7 +5477,7 @@ button:focus-visible {
 
 .app-bottom-navigation button {
   border-radius: 0;
-  color: #867a6e;
+  color: var(--nav-inactive);
 }
 
 .app-bottom-navigation button.is-active {
@@ -7553,18 +7501,8 @@ button:focus-visible {
 @keyframes home-notice-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .home-notice-card { animation-duration: 120ms; } }
 
-/* Confirmed A bottom-navigation icon set. */
-.app-bottom-navigation button .app-nav-mark {
-  width: 32px;
-  height: 32px;
-  border: 0;
-  object-fit: contain;
-  opacity: 1;
-  filter: invert(50%) sepia(12%) saturate(654%) hue-rotate(345deg) brightness(93%) contrast(89%);
-}
-.app-bottom-navigation button .app-nav-mark::before,
-.app-bottom-navigation button .app-nav-mark::after { content: none; }
-.app-bottom-navigation button.is-active .app-nav-mark { filter: var(--active-navigation-icon-filter); }
+/* Confirmed A bottom-navigation icon set. The mark inherits the button's colour,
+   so active and inactive follow the same tokens as the label beneath it. */
 .app-bottom-navigation button.is-active::before {
   content: none;
 }
@@ -7819,7 +7757,7 @@ button:focus-visible {
 .mailbox-screen--inline-direction .mailbox-filter-chips button { min-height: 29px; padding: 6px 10px; border-color: rgba(41,37,34,.16); color: #766c61; font-family: "Pretendard", "Noto Sans KR", sans-serif; font-size: 12px; line-height: 15.75px; }
 .mailbox-screen--inline-direction .mailbox-filter-chips button.is-active { border-color: var(--deep-plum); background: var(--deep-plum); color: #fff; }
 .mailbox-screen--inline-direction .mailbox-unified-list { display: grid; gap: 10px; margin-top: 16px; border-top: 0; }
-.mailbox-screen--inline-direction .mailbox-unified-item { min-height: 84px; grid-template-columns: minmax(0,1fr); padding: 16px; border: 0; background: rgba(255,253,248,.6); }
+.mailbox-screen--inline-direction .mailbox-unified-item { min-height: 84px; grid-template-columns: minmax(0,1fr); padding: 16px 2px; background: transparent; }
 .mailbox-screen--inline-direction .mailbox-unified-copy { display: grid; grid-template-columns: minmax(0,1fr) auto; grid-template-rows: auto auto; column-gap: 12px; row-gap: 10px; }
 .mailbox-screen--inline-direction .mailbox-unified-item time { color: #8f857b; font-family: "Pretendard", "Noto Sans KR", sans-serif; font-size: 12px; line-height: 16.5px; }
 .mailbox-screen--inline-direction .mailbox-unified-item strong { font-size: 17px; font-weight: 500; line-height: 25.5px; }
