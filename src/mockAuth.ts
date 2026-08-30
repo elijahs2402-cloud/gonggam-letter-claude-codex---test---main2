@@ -233,7 +233,7 @@ export function getOnboardingNextPath() {
   const snapshot = getMockAuthSnapshot();
   if (!snapshot.account || !["new_user", "existing_user", "logged_in"].includes(snapshot.state)) return "/login";
   if (!snapshot.account.termsAccepted || !snapshot.account.ageConfirmed) return "/terms-consent";
-  if (!snapshot.account.anonymousName || !snapshot.account.onboardingCompleted) return "/anonymous-name";
+  if (!snapshot.account.anonymousName || !snapshot.account.onboardingCompleted) return "/nickname-entry";
   return undefined;
 }
 

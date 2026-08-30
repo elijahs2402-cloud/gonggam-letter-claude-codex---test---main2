@@ -26,25 +26,93 @@ function ReceivedReplyRow({ letter, userId, onOpen }: { letter: Letter; userId: 
 }
 
 export function AnonymousNameSettingsScreen() {
-  const [current, setCurrent] = useState(getCurrentAnonymousName()); const [candidate, setCandidate] = useState<string>(); const [confirm, setConfirm] = useState(false); const [failed, setFailed] = useState(false); const [toast, setToast] = useState("");
-  const propose = () => { setCandidate(generateAnonymousName(current)); setFailed(false); };
-  const save = () => { if (!candidate || new URLSearchParams(window.location.search).get("state") === "error") { setFailed(true); return; } const account = updateAnonymousName(candidate); if (!account) { setFailed(true); return; } setCurrent(account.anonymousName ?? candidate); setCandidate(undefined); setConfirm(false); setToast("익명 이름을 바꿨어요."); window.setTimeout(() => setToast(""), 2200); };
-  return <main className="mobile-prototype anonymous-name-screen"><Header title="익명 닉네임" /><div className="my-detail-scroll"><section className="subpage-heading"><h1>{current}</h1><p>앞으로 보내는 편지와 답장에 이 이름이 보여요.</p><small>이전에 보낸 편지와 답장에는 당시의 이름이 그대로 남아요.</small></section>{candidate ? <section className="name-candidate"><p>새로운 이름</p><strong>{candidate}</strong><button className="flow-primary-button" type="button" onClick={() => setConfirm(true)}>이 이름으로 바꾸기</button><button className="flow-secondary-button" type="button" onClick={() => { setCandidate(undefined); setFailed(false); }}>기존 이름 유지하기</button><button className="flow-text-button" type="button" onClick={propose}>다른 이름 다시 받기</button>{failed && <div className="flow-notice"><strong>익명 이름을 바꾸지 못했어요.</strong><span>잠시 후 다시 시도해주세요.</span><button type="button" onClick={() => setFailed(false)}>다시 시도</button></div>}</section> : <button className="flow-primary-button" type="button" onClick={propose}>새로운 이름 받기</button>}{toast && <p className="notification-toast" role="status">{toast}</p>}</div>{confirm && <div className="auth-dialog-backdrop"><section className="auth-dialog" role="dialog" aria-modal="true"><p>익명 닉네임</p><h2>익명 이름을 바꿀까요?</h2><span>앞으로 작성하는 편지와 답장에는 새로운 이름이 보여요.<br />이전에 작성한 기록의 이름은 바뀌지 않아요.</span><button className="auth-primary" type="button" onClick={save}>이름 바꾸기</button><button className="auth-secondary" type="button" onClick={() => setConfirm(false)}>취소</button></section></div>}</main>;
+  const [current, setCurrent] = useState(getCurrentAnonymousName());
+  const [name, setName] = useState(current);
+  const [confirm, setConfirm] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [toast, setToast] = useState("");
+  const [isToastLeaving, setIsToastLeaving] = useState(false);
+  const canSubmit = Boolean(name.trim());
+  const suggestRandom = () => { setName(generateAnonymousName(current)); setFailed(false); };
+  const save = () => {
+    const finalized = name.trim();
+    if (!finalized || new URLSearchParams(window.location.search).get("state") === "error") { setFailed(true); return; }
+    const account = updateAnonymousName(finalized);
+    if (!account) { setFailed(true); return; }
+    const updatedName = account.anonymousName ?? finalized;
+    setCurrent(updatedName);
+    setName(updatedName);
+    setConfirm(false);
+    setToast("나의 이름을 바꿨어요.");
+    setIsToastLeaving(false);
+    window.setTimeout(() => setIsToastLeaving(true), 3000);
+  };
+  return <main className="mobile-prototype auth-screen nef-screen">
+    {toast && <p className={`home-draft-saved-toast${isToastLeaving ? " is-leaving" : ""}`} role="status" aria-live="polite" onAnimationEnd={() => { if (isToastLeaving) setToast(""); }}>{toast}</p>}
+    <header className="auth-header"><button type="button" onClick={() => navigateBack("/my-space")} aria-label="이전 화면으로 돌아가기">←</button><span>나의 이름</span><i aria-hidden="true" /></header>
+    <div className="auth-scroll nef-scroll">
+      <section className="auth-intro-copy nef-intro"><h1>이름 바꾸기</h1><p className="auth-helper">앞으로 보내는 편지와 답장에 이 이름이 보여요.<br />이전에 보낸 편지와 답장에는 당시의 이름이 그대로 남아요.</p></section>
+      <section className="nef-field" aria-labelledby="nickname-settings-label">
+        <label id="nickname-settings-label" className="nef-label" htmlFor="nickname-settings-input">이름</label>
+        <div className="anonymous-name-input-wrap"><input id="nickname-settings-input" type="text" value={name} maxLength={12} onChange={(event) => { setName(event.target.value); setFailed(false); }} placeholder="이름을 입력해주세요" aria-describedby="nickname-settings-note nickname-settings-count" />{name && <button className="anonymous-name-clear" type="button" onClick={() => setName("")} aria-label="입력한 이름 지우기">×</button>}</div>
+        <div className="anonymous-name-field__meta"><span id="nickname-settings-note">12자 이내로 입력해주세요.</span><span id="nickname-settings-count" aria-live="polite">{name.length} / 12</span></div>
+      </section>
+      <div className="nef-suggest-wrap"><button className="nef-suggest-button" type="button" onClick={suggestRandom}>이름 추천 받기</button></div>
+      {failed && <div className="flow-notice"><strong>익명 이름을 바꾸지 못했어요.</strong><span>잠시 후 다시 시도해주세요.</span></div>}
+    </div>
+    <footer className="auth-actions nickname-settings-actions"><button className="auth-primary" type="button" disabled={!canSubmit} onClick={() => setConfirm(true)}>이 이름으로 바꾸기</button></footer>
+    {confirm && <div className="draft-exit-overlay nickname-change-sheet" role="dialog" aria-modal="true" aria-labelledby="nickname-change-title"><section className="draft-exit-panel"><div className="draft-exit-copy"><h2 id="nickname-change-title">나의 이름을 바꿀까요?</h2><span>앞으로 작성하는 편지와 답장에는 새로운 이름이 보여요.<br />이전에 작성한 기록의 이름은 바뀌지 않아요.</span></div><div className="draft-exit-actions"><button className="auth-primary" type="button" onClick={save}>이름 바꾸기</button><button className="auth-secondary" type="button" onClick={() => setConfirm(false)}>취소</button></div></section></div>}
+  </main>;
 }
 
 const guideContent = [
   ["공감편지는", "익명으로 마음을 담은 편지를 남기고, 한 사람이 읽어 답장을 전하는 서비스예요."],
   ["답장이 도착하기까지", "답장은 바로 도착하지 않을 수 있어요. 편지를 맡은 사람이 천천히 마음을 읽고 답장을 전해요."],
   ["편지와 답장", "여러 통의 편지를 보낼 수 있고, 각 편지는 저마다의 여정을 이어가요. 편지를 맡은 뒤 답장이 어렵다면 조용히 돌려보낼 수 있어요."],
-  ["안전하게 이용하기", "신고와 차단을 사용할 수 있어요. 공감편지는 전문 상담이나 진단 서비스가 아니며, 긴급한 상황에서는 더 빠른 도움을 우선해주세요."],
+  ["안전하게 이용하기", "불편한 편지는 언제든 신고하거나 차단할 수 있어요. 공감편지는 전문적인 상담이나 의료 서비스가 아니므로, 위급한 상황에서는 반드시 전문 기관의 도움을 먼저 요청해 주세요."],
 ];
 const safetyContent = [
   ["개인정보", "실명, 연락처, 주소, SNS 계정은 적지 않도록 해요."], ["서로를 존중하기", "상대방을 비난하거나 모욕하는 표현은 사용할 수 없어요."], ["제한되는 내용", "성적·불법·위협 콘텐츠와 자해·타해를 부추기는 표현은 제한돼요."], ["신고와 차단", "편지와 답장은 신고될 수 있으며, 차단하면 해당 사용자와 다시 연결되지 않아요."], ["프로토타입 안내", "AI 또는 규칙 기반 안전 검토는 오판할 수 있어요. 실제 서비스에서는 중요한 제재에 운영 검토가 필요해요."],
 ];
 
-export function GuideScreen({ kind }: { kind: "service" | "safety" }) { const isSafety = kind === "safety"; const content = isSafety ? safetyContent : guideContent; return <main className="mobile-prototype guide-screen"><Header title={isSafety ? "안전하게 마음을 나누기 위해" : "이용 안내"} /><div className="my-detail-scroll"><section className="subpage-heading"><h1>{isSafety ? "안전하게 마음을\n나누기 위해" : "공감편지를\n이용하는 방법"}</h1><p>{isSafety ? "서로의 마음이 안전하게 머물 수 있도록 함께 지켜주세요." : "마음을 담은 편지가 조용히 오가는 방식이에요."}</p></section><section className="guide-sections">{content.map(([title, body]) => <article key={title}><h2>{title}</h2><p>{body}</p></article>)}</section>{isSafety && <p className="guide-todo">TODO · 실제 서비스 개발 시 운영 정책과 검토 절차를 연결해야 해요.</p>}</div></main>; }
+export function GuideScreen({ kind }: { kind: "service" | "safety" }) { const isSafety = kind === "safety"; const content = isSafety ? safetyContent : guideContent; return <main className="mobile-prototype guide-screen"><Header title={isSafety ? "안전하게 마음을 나누기 위해" : "이용 안내"} /><div className="my-detail-scroll"><section className="subpage-heading"><h1>{isSafety ? "안전하게 마음을\n나누기 위해" : "공감편지를\n이용하는 방법"}</h1>{isSafety && <p>서로의 마음이 안전하게 머물 수 있도록 함께 지켜주세요.</p>}</section><section className="guide-sections">{content.map(([title, body]) => <article key={title}><h2>{title}</h2><p>{body}</p></article>)}</section>{!isSafety && <p className="guide-urgent-note"><span aria-hidden="true">✻</span><strong>지금 바로 도움이 필요한 상황이라면, 편지보다 가까운 사람이나 지역의 긴급 지원에 먼저 연락해주세요.</strong></p>}{isSafety && <p className="guide-todo">TODO · 실제 서비스 개발 시 운영 정책과 검토 절차를 연결해야 해요.</p>}</div></main>; }
 
-export function PolicyScreen({ kind }: { kind: "privacy" | "terms" }) { const privacy = kind === "privacy"; const title = privacy ? "개인정보 처리방침" : "서비스 이용약관"; const notice = privacy ? "최종 개인정보 처리방침은 실제 서비스 개발과 법률 검토 후 연결됩니다." : "최종 이용약관은 실제 서비스 정책과 법률 검토 후 연결됩니다."; return <main className="mobile-prototype policy-screen"><Header title={title} /><div className="my-detail-scroll"><section className="policy-document"><p>문서 템플릿</p><h1>{title}</h1><span>적용 예정일 · 실제 서비스 준비 후 확정</span><div className="policy-notice"><strong>{notice}</strong><p>개발 단계에서 실제 URL 또는 CMS 문서로 교체해야 합니다.</p></div><h2>목차</h2><ol><li>문서의 목적과 적용 범위</li><li>서비스 이용과 사용자 보호</li><li>정보 처리 및 보관 기준</li><li>문의와 변경 사항 안내</li></ol></section></div></main>; }
+export function PolicyScreen({ kind }: { kind: "privacy" | "terms" }) {
+  const privacy = kind === "privacy";
+  const title = privacy ? "개인정보 처리방침" : "서비스 이용약관";
+  const privacySections = [
+    ["1. 문서의 목적과 적용 범위", "이 개인정보 처리방침은 공감편지 서비스를 이용하는 과정에서 수집·이용되는 정보의 종류와 처리 방식을 안내하기 위해 마련되었습니다."],
+    ["2. 서비스 이용과 사용자 보호", "공감편지는 익명 기반 서비스로, 이용자를 특정할 수 있는 정보를 필수로 요구하지 않으며 최소한의 정보만 수집합니다."],
+    ["3. 정보 처리 및 보관 기준", "수집된 정보는 서비스 제공 목적으로만 이용되며, 관련 법령에 따른 보관 기간이 지나면 지체 없이 파기됩니다."],
+    ["4. 문의와 변경 사항 안내", "개인정보 처리방침에 대한 문의는 앱 내 문의 경로를 통해 접수할 수 있으며, 내용이 변경되는 경우 서비스 내 공지로 안내드립니다."],
+  ];
+  if (privacy) return <main className="mobile-prototype policy-screen privacy-policy-screen"><Header title={title} /><div className="my-detail-scroll"><section className="privacy-policy-document" aria-label="개인정보 처리방침">{privacySections.map(([heading, body]) => <article key={heading}><h2>{heading}</h2><p>{body}</p></article>)}</section></div></main>;
+  const notice = privacy ? "최종 개인정보 처리방침은 실제 서비스 개발과 법률 검토 후 연결됩니다." : "최종 이용약관은 실제 서비스 정책과 법률 검토 후 연결됩니다.";
+  const sections = ["문서의 목적과 적용 범위", "서비스 이용과 사용자 보호", "정보 처리 및 보관 기준", "문의와 변경 사항 안내"];
+
+  return <main className="mobile-prototype policy-screen">
+    <Header title={title} />
+    <div className="my-detail-scroll">
+      <article className="policy-document">
+        <header className="policy-document-heading">
+          <p>공감편지의 약속</p>
+          <span className="policy-document-mark" aria-hidden="true">01</span>
+          <h1>{title}</h1>
+          <time>적용 예정일 · 실제 서비스 준비 후 확정</time>
+        </header>
+        <aside className="policy-notice" aria-label="문서 안내">
+          <span aria-hidden="true">✦</span>
+          <div><strong>{notice}</strong><p>개발 단계에서는 이 안내 문서로 제공하며, 운영 전 실제 URL 또는 CMS 문서로 교체합니다.</p></div>
+        </aside>
+        <section className="policy-contents" aria-labelledby="policy-contents-title">
+          <div className="policy-section-label"><span>contents</span><h2 id="policy-contents-title">문서의 차례</h2></div>
+          <ol>{sections.map((section, index) => <li key={section}><span>{String(index + 1).padStart(2, "0")}</span><strong>{section}</strong><i aria-hidden="true">↗</i></li>)}</ol>
+        </section>
+        <p className="policy-document-footnote">궁금한 점이 있다면, 서비스가 정식으로 시작된 뒤 안내되는 문의 경로로 연락해주세요.</p>
+      </article>
+    </div>
+  </main>;
+}
 
 export function AppInfoScreen() { return <main className="mobile-prototype app-info-screen"><Header title="공감편지 정보" /><div className="my-detail-scroll"><section className="app-info-card"><p>공감편지</p><h1>Prototype 0.1.0</h1><span>실제 운영 앱이 아닌 디자인 프로토타입 버전이에요.</span><dl><div><dt>오픈소스 라이선스</dt><dd>실제 개발 단계에서 사용 패키지 기준으로 연결합니다.</dd></div><div><dt>문의 경로</dt><dd>문의 경로는 실제 서비스 운영 준비 후 연결됩니다.</dd></div></dl><button type="button" onClick={() => navigateTo("/privacy-policy")}>개인정보 처리방침</button><button type="button" onClick={() => navigateTo("/terms-of-service")}>서비스 이용약관</button></section></div></main>; }
 

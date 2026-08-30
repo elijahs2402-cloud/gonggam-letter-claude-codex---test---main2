@@ -1,8 +1,9 @@
 import type { Letter, LetterStatus } from "./letters";
 
-// TODO(operations): replace development windows with the approved service thresholds.
+// A letter claimed by a reader stays exclusively with that reader for three days.
+// It must not be made available to anyone else during this reply window.
 export const WAITING_FOR_READER_DELAY_MS = 60 * 1000;
-export const ASSIGNED_REPLY_DELAY_MS = 60 * 1000;
+export const ASSIGNED_REPLY_DELAY_MS = 3 * 24 * 60 * 60 * 1000;
 export const WAITING_EXTENSION_DELAY_MS = 60 * 1000;
 
 const copy: Record<LetterStatus, { label: string; description: string }> = {

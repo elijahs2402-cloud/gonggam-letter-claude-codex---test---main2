@@ -39,30 +39,18 @@ export function NotificationsScreen() {
 
 const settingRows = [
   ["replyArrived", "답장 도착", "답장이 도착했을 때 알려드려요."],
-  ["letterUpdates", "편지 진행 소식", "편지를 읽거나 맡은 소식을 알려드려요."],
   ["replyReminders", "맡은 편지 답장 안내", "아직 전하지 못한 답장이 있을 때 알려드려요."],
-  ["safetyUpdates", "신고 및 안전 안내", "신고 접수와 처리 결과를 알려드려요."],
 ] as const;
 
 export function NotificationSettingsScreen() {
   const [settings, setSettings] = useState(getNotificationSettings);
   const [toast, setToast] = useState("");
-  const [permissionGuide, setPermissionGuide] = useState(false);
-  const [deviceMessage, setDeviceMessage] = useState(false);
-  const qaMode = isPrototypeQaMode();
   const change = (changes: Parameters<typeof updateNotificationSettings>[0]) => { const next = updateNotificationSettings(changes); setSettings(next); setToast("알림 설정을 바꿨어요."); window.setTimeout(() => setToast(""), 1800); };
   return <main className="mobile-prototype notification-settings-screen">
     <Header title="알림 설정" fallback="/my-space" />
     <div className="notification-scroll">
-      <section className="notification-setting-intro"><h1>소식이 도착했을 때<br />알려드릴게요</h1><p>앱 안의 알림은 언제든 확인할 수 있어요.<br />휴대폰 알림을 허용하면 앱을 열지 않아도 소식을 받을 수 있어요.</p></section>
-      {settings.pushPermission === "denied" && <section className="push-denied-note"><strong>휴대폰 알림이 꺼져 있어요.</strong><p>앱 안에서는 편지 소식을 계속 확인할 수 있어요.</p><button type="button" onClick={() => setDeviceMessage(true)}>기기 설정에서 켜기</button></section>}
-      {settings.pushPermission === "not_requested" && <section className="push-guide-card"><strong>편지의 소식을 놓치지 않도록 알려드릴까요?</strong><p>답장이 도착하거나 편지에 새로운 움직임이 생기면 알려드릴게요.</p><button className="flow-secondary-button" type="button" onClick={() => setPermissionGuide(true)}>알림 받기</button><button className="flow-text-button" type="button" onClick={() => change({ pushPermission: "denied" })}>나중에</button></section>}
-      {settings.pushPermission === "granted" && <p className="push-granted-note">휴대폰 알림을 받을 수 있어요.</p>}
       <section className="notification-settings-list" aria-label="알림 종류 설정">{settingRows.map(([key, title, description]) => <label key={key}><span><strong>{title}</strong><small>{description}</small></span><input type="checkbox" checked={settings[key]} onChange={() => change({ [key]: !settings[key] })} /><i aria-hidden="true" /></label>)}<label className="is-required"><span><strong>서비스 중요 안내</strong><small>서비스 이용에 꼭 필요한 안내예요.</small></span><input type="checkbox" checked readOnly /><i aria-hidden="true" /></label></section>
-      {qaMode && <details className="prototype-test-panel notification-test"><summary>프로토타입 테스트</summary><div><button type="button" onClick={() => change({ pushPermission: "not_requested" })}>요청 전</button><button type="button" onClick={() => change({ pushPermission: "granted" })}>허용</button><button type="button" onClick={() => change({ pushPermission: "denied" })}>거절</button></div></details>}
       {toast && <p className="notification-toast" role="status">{toast}</p>}
     </div>
-    {permissionGuide && <div className="auth-dialog-backdrop"><section className="auth-dialog" role="dialog" aria-modal="true"><p>휴대폰 알림</p><h2>알림을 받을까요?</h2><span>실제 서비스에서는 이 단계에서 휴대폰의 알림 권한을 요청합니다.</span><button className="auth-primary" type="button" onClick={() => { change({ pushPermission: "granted" }); setPermissionGuide(false); }}>허용</button><button className="auth-secondary" type="button" onClick={() => { change({ pushPermission: "denied" }); setPermissionGuide(false); }}>거절</button></section></div>}
-    {deviceMessage && <div className="auth-dialog-backdrop"><section className="auth-dialog" role="dialog" aria-modal="true"><p>프로토타입 안내</p><h2>기기 설정에서 켜기</h2><span>실제 서비스에서는 휴대폰 알림 설정으로 이동합니다.</span><button className="auth-primary" type="button" onClick={() => setDeviceMessage(false)}>닫기</button></section></div>}
   </main>;
 }

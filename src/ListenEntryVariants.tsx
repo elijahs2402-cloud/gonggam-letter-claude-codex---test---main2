@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { getCurrentAppSearchParams, navigateBack, navigateTo } from "./navigation";
 
 type ListenVariant = "A" | "B" | "C";
@@ -134,19 +134,9 @@ function ListenEntryFrame({
   className: string;
   children: ReactNode;
 }) {
-  const [state, setState] = useState<ListenEntryState>(getInitialState);
-  const timerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-    };
-  }, []);
-
+  const state = getInitialState();
   function meetLetter() {
-    if (state === "loading") return;
-    setState("loading");
-    timerRef.current = window.setTimeout(() => goTo("/waiting-letters"), 2000);
+    goTo("/read-letter/sample-waiting-letter-one");
   }
 
   const content =
@@ -226,5 +216,28 @@ export function ListenEntryCScreen() {
         </figure>
       </>
     </ListenEntryFrame>
+  );
+}
+
+export function ListenEntryEmptyScreen() {
+  return (
+    <main className="mobile-prototype listen-entry-screen listen-entry-empty-screen">
+      <ListenEntryHeader />
+      <div className="listen-entry-empty-content">
+        <img
+          className="listen-entry-empty-art"
+          src="/assets/listen-entry-empty-mailbox.png"
+          alt="비어 있는 라벤더색 우편함"
+        />
+        <section className="listen-entry-empty-copy" aria-live="polite">
+          <h1>지금은 기다리는 편지가 없어요.</h1>
+          <p>새로운 마음이 도착하면<br />이곳에서 만날 수 있어요.</p>
+        </section>
+      </div>
+      <div className="flow-fixed-action flow-fixed-action--split listen-entry-actions listen-entry-empty-actions">
+        <button type="button" className="flow-secondary-button" onClick={() => goTo("/home")}>홈으로 돌아가기</button>
+        <button type="button" className="flow-primary-button" onClick={() => goTo("/listen-entry-a")}>다시 확인하기</button>
+      </div>
+    </main>
   );
 }

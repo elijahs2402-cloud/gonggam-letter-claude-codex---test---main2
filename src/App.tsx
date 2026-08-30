@@ -23,9 +23,10 @@ import {
   ListenEntryAScreen,
   ListenEntryBScreen,
   ListenEntryCScreen,
+  ListenEntryEmptyScreen,
 } from "./ListenEntryVariants";
 import { ReplyPreviewScreen } from "./ReplyPreviewScreen";
-import { MailboxScreen } from "./MailboxScreen";
+import { MailboxDemoDirectionalStatusScreen, MailboxDemoIconSetScreen, MailboxDemoInlineDirectionalStatusScreen, MailboxDemoScreen, MailboxDemoStatusIconScreen, MailboxDemoUploadedIconSetScreen, MailboxEmptyDemoScreen, MailboxReplyArrivedDemoScreen, MailboxScreen } from "./MailboxScreen";
 import { MailboxListLabScreen } from "./MailboxListLab";
 import { MailboxMockupScreen } from "./MailboxMockup";
 import { MailboxMockup2Screen } from "./MailboxMockup2";
@@ -49,6 +50,7 @@ import {
   LetterDelayScreen,
   LetterWithdrawnScreen,
   MyLetterDetailScreen,
+  MyLetterRepliedDemoScreen,
   ReaderPromiseScreen,
   AssignedLetterFlowScreen,
   ReadLetterFlowScreen,
@@ -77,8 +79,8 @@ import { createEmotionJourney } from "./emotionJourney";
 import { getCurrentAppPath, getCurrentAppSearchParams, navigateTo, replaceRoute } from "./navigation";
 import { MindContentBoard } from "./prototype-board/MindContentBoard";
 import { LetterSafetyReviewScreen, UrgentSupportScreen } from "./SafetyScreens";
-import { LetterReportScreen, SafetyManagementScreen } from "./ReportScreens";
-import { AnonymousNameScreen, AuthGateRedirect, DormantAccountScreen, LoginScreen, OnboardingScreen, TermsConsentScreen, getRequiredOnboardingPath } from "./AuthScreens";
+import { LetterReportCompleteDemoScreen, LetterReportFigmaScreen, LetterReportScreen, SafetyManagementScreen } from "./ReportScreens";
+import { AnonymousNameScreen, AuthGateRedirect, DirectNicknameScreen, DormantAccountScreen, LoginScreen, OnboardingRedesignScreen, OnboardingScreen, TermsConsentScreen, getRequiredOnboardingPath } from "./AuthScreens";
 import { GratitudeScreen } from "./GratitudeScreen";
 import { getMockAuthSnapshot, isMockAuthenticated, setPostLoginPath } from "./mockAuth";
 import { NotificationsScreen, NotificationSettingsScreen } from "./NotificationScreens";
@@ -160,7 +162,7 @@ function IntroScreen() {
     <ScreenShell className="intro-screen">
       <img
         className="intro-art"
-        src="/assets/intro-door-raised.png"
+        src="/assets/intro-door-uploaded.png"
         alt="담쟁이덩굴이 감싼 보랏빛 현관문과 편지가 든 우편함"
       />
       <section className="intro-copy" aria-labelledby="intro-title">
@@ -382,6 +384,7 @@ export function App() {
   if (path === "/" || path === "/intro") return <IntroScreen />;
 
   if (path === "/onboarding") return <OnboardingScreen />;
+  if (path === "/onboarding-new") return <OnboardingRedesignScreen />;
   if (path === "/dormant-account") return <DormantAccountScreen />;
   if (path === "/login") {
     if (isMockAuthenticated()) return <AuthGateRedirect to="/home" />;
@@ -395,16 +398,21 @@ export function App() {
   if (path === "/anonymous-name") {
     const next = getRequiredOnboardingPath();
     const isMotionPreview = getCurrentAppSearchParams().get("motion") === "preview";
-    if (next && next !== "/anonymous-name" && !isMotionPreview) return <AuthGateRedirect to={next} />;
+    if (next && next !== "/anonymous-name" && next !== "/nickname-entry" && !isMotionPreview) return <AuthGateRedirect to={next} />;
     return <AnonymousNameScreen />;
+  }
+  if (path === "/nickname-entry") {
+    const next = getRequiredOnboardingPath();
+    if (next && next !== "/anonymous-name" && next !== "/nickname-entry") return <AuthGateRedirect to={next} />;
+    return <DirectNicknameScreen />;
   }
   if (path === "/onboarding-complete") {
     if (!isMockAuthenticated()) return <AuthGateRedirect to={getRequiredOnboardingPath() ?? "/login"} />;
     return <AuthGateRedirect to="/home" />;
   }
 
-  const protectedPaths = new Set(["/home", "/write-letter", "/waiting-letters", "/mailbox", "/my-space", "/saved-excerpts", "/received-replies", "/anonymous-name-settings", "/account-settings", "/login-information", "/data-and-privacy", "/account-withdrawal", "/notifications", "/notification-settings", "/safety-management", "/service-guide", "/safety-guide", "/privacy-policy", "/terms-of-service", "/app-info", "/prototype/mailbox-list-lab", "/prototype/waiting-letters-list-lab", "/letter-safety-review"]);
-  const protectedFlowPrefixes = ["/gratitude/", "/report-reply/", "/return-letter/", "/reply-safety-review/", "/reply-sending/", "/report-letter/", "/read-letter/", "/assigned-letter/", "/assign-letter/", "/write-reply/", "/reply-review/", "/reply-sent/", "/letter-journey/", "/reply-arrived/", "/letter-delay/", "/letter-withdrawn/", "/mailbox/my/", "/mailbox/replied/"];
+  const protectedPaths = new Set(["/home", "/write-letter", "/waiting-letters", "/mailbox", "/my-space", "/saved-excerpts", "/received-replies", "/anonymous-name-settings", "/account-settings", "/login-information", "/data-and-privacy", "/account-withdrawal", "/notifications", "/notification-settings", "/safety-management", "/service-guide", "/safety-guide", "/privacy-policy", "/app-info", "/prototype/mailbox-list-lab", "/prototype/waiting-letters-list-lab", "/letter-safety-review"]);
+  const protectedFlowPrefixes = ["/gratitude/", "/report-reply/", "/return-letter/", "/reply-safety-review/", "/reply-sending/", "/report-letter/", "/report-letter-figma/", "/report-letter-legacy/", "/read-letter/", "/assigned-letter/", "/assign-letter/", "/write-reply/", "/reply-review/", "/reply-sent/", "/letter-journey/", "/reply-arrived/", "/letter-delay/", "/letter-withdrawn/", "/mailbox/my/", "/mailbox/replied/"];
   const isProtectedServicePath = protectedPaths.has(path) || ["/letter-preview", "/letter-sent", "/reader-promise", "/urgent-support"].includes(path) || protectedFlowPrefixes.some((prefix) => path.startsWith(prefix));
   if (isProtectedServicePath && !isMockAuthenticated()) {
     setPostLoginPath(path);
@@ -429,7 +437,7 @@ export function App() {
   if (path === "/service-guide") return <GuideScreen kind="service" />;
   if (path === "/safety-guide") return <GuideScreen kind="safety" />;
   if (path === "/privacy-policy") return <PolicyScreen kind="privacy" />;
-  if (path === "/terms-of-service") return <PolicyScreen kind="terms" />;
+  if (path === "/terms-of-service") return <TermsMockupScreen />;
   if (path === "/app-info") return <AppInfoScreen />;
   if (path === "/write-letter") return <WriteLetterFlowScreen />;
   if (path === "/letter-preview") return <LetterPreviewScreen />;
@@ -445,7 +453,11 @@ export function App() {
   if (path.startsWith("/reply-safety-review/")) return <ReplySendingTransitionScreen letterId={decodeURIComponent(path.slice("/reply-safety-review/".length))} />;
   if (path === "/urgent-support") return <UrgentSupportScreen kind="letter" returnTo="/write-letter" />;
   if (path === "/safety-management") return <SafetyManagementScreen />;
-  if (path.startsWith("/report-letter/")) return <LetterReportScreen letterId={decodeURIComponent(path.slice("/report-letter/".length))} />;
+  if (path === "/report-letter-demo") return <LetterReportFigmaScreen letterId="sample-waiting-letter-one" />;
+  if (path === "/report-letter-complete-demo") return <LetterReportCompleteDemoScreen />;
+  if (path.startsWith("/report-letter-legacy/")) return <LetterReportScreen letterId={decodeURIComponent(path.slice("/report-letter-legacy/".length))} />;
+  if (path.startsWith("/report-letter-figma/")) return <LetterReportFigmaScreen letterId={decodeURIComponent(path.slice("/report-letter-figma/".length))} />;
+  if (path.startsWith("/report-letter/")) return <LetterReportFigmaScreen letterId={decodeURIComponent(path.slice("/report-letter/".length))} />;
   if (path === "/letter-sent") return <LetterSentScreen letterId={getCurrentAppSearchParams().get("id") ?? undefined} />;
   if (path === "/prototype/letter-journey-lab") return <LetterJourneyLabScreen />;
   if (path === "/prototype/mailbox-list-lab") return <MailboxListLabScreen />;
@@ -474,6 +486,7 @@ export function App() {
   if (path.startsWith("/reply-arrived/")) return <ReplyArrivedScreen letterId={decodeURIComponent(path.slice("/reply-arrived/".length))} />;
   if (path.startsWith("/letter-delay/")) return <LetterDelayScreen letterId={decodeURIComponent(path.slice("/letter-delay/".length))} />;
   if (path.startsWith("/letter-withdrawn/")) return <LetterWithdrawnScreen letterId={decodeURIComponent(path.slice("/letter-withdrawn/".length))} />;
+  if (path === "/mailbox-my-replied-demo") return <MyLetterRepliedDemoScreen />;
   if (path.startsWith("/mailbox/my/")) return <MyLetterDetailScreen letterId={decodeURIComponent(path.slice("/mailbox/my/".length))} />;
   if (path.startsWith("/mailbox/replied/")) return <RepliedLetterDetailScreen letterId={decodeURIComponent(path.slice("/mailbox/replied/".length))} />;
   if (path === "/write-letter-a") return <WriteLetterAScreen />;
@@ -491,6 +504,14 @@ export function App() {
   if (path === "/write-reply-b") return <WriteReplyBScreen />;
   if (path === "/write-reply-c") return <WriteReplyCScreen />;
   if (path === "/reply-preview") return <ReplyPreviewScreen />;
+  if (path === "/mailbox-demo-inline-directional-status") return <MailboxDemoInlineDirectionalStatusScreen />;
+  if (path === "/mailbox-demo-directional-status") return <MailboxDemoDirectionalStatusScreen />;
+  if (path === "/mailbox-demo-status-icons") return <MailboxDemoStatusIconScreen />;
+  if (path === "/mailbox-demo-upload-icons") return <MailboxDemoUploadedIconSetScreen />;
+  if (path === "/mailbox-demo-icons") return <MailboxDemoIconSetScreen />;
+  if (path === "/mailbox-demo") return <MailboxDemoScreen />;
+  if (path === "/mailbox-empty") return <MailboxEmptyDemoScreen />;
+  if (path === "/mailbox-reply-arrived-demo") return <MailboxReplyArrivedDemoScreen />;
   if (path === "/mailbox") return <MailboxScreen />;
   if (path === "/mailbox-concept-a") return <MailboxConceptAScreen />;
   if (path === "/mailbox-concept-b") return <MailboxConceptBScreen />;
@@ -499,6 +520,7 @@ export function App() {
   if (path === "/listen-entry-a") return <ListenEntryAScreen />;
   if (path === "/listen-entry-b") return <ListenEntryBScreen />;
   if (path === "/listen-entry-c") return <ListenEntryCScreen />;
+  if (path === "/listen-entry-empty") return <ListenEntryEmptyScreen />;
   // Direction A is retained as a visual reference; its former user entry is now /home.
   if (path === "/direction-a") return <RedirectToHome />;
   if (path === "/direction-b") return <DirectionBScreen />;

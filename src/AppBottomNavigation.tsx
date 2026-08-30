@@ -11,7 +11,7 @@ const items: ReadonlyArray<{ id: AppSection; label: string; path: string; asset:
   { id: "my-space", label: "나의 공간", path: "/my-space", asset: "/assets/notebook_icon.png" },
 ];
 
-export function AppBottomNavigation({ active }: { active: AppSection }) {
+export function AppBottomNavigation({ active, showAttention = true }: { active: AppSection; showAttention?: boolean }) {
   const userId = getCurrentUserId();
   const hasAttention = hasMailboxAttention(userId, Boolean(getLetterDraft(userId)?.content.trim()));
   return (
@@ -25,7 +25,7 @@ export function AppBottomNavigation({ active }: { active: AppSection }) {
           onClick={() => navigateTo(item.path)}
         >
           <img className={`app-nav-mark app-nav-mark--${item.id}`} src={item.asset} alt="" aria-hidden="true" />
-          {item.id === "mailbox" && hasAttention && <><i className="app-nav-notice-dot" aria-hidden="true" /><span className="sr-only">확인이 필요한 편지함 소식이 있어요.</span></>}
+          {item.id === "mailbox" && showAttention && hasAttention && <><i className="app-nav-notice-dot" aria-hidden="true" /><span className="sr-only">확인이 필요한 편지함 소식이 있어요.</span></>}
           <span>{item.label}</span>
         </button>
       ))}

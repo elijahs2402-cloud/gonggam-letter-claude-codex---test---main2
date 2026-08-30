@@ -33,6 +33,7 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: parseInt(process.env.PORT || '8443'),
       strictPort: true,
+      allowedHosts: ['aquarium-crest-exhibitions-given.trycloudflare.com'],
       watch: { ignored: ['**/.figma/**'] },
     },
     preview: {

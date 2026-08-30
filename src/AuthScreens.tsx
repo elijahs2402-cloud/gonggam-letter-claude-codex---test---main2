@@ -6,7 +6,6 @@ import {
   generateAnonymousName,
   getMockAuthSnapshot,
   getOnboardingNextPath,
-  getPostLoginPath,
   resolveMockLogin,
   retryMockLogin,
   setMockLoginMode,
@@ -55,7 +54,30 @@ export function OnboardingScreen() {
   </AuthShell>;
 }
 
-const providerLabels: Record<MockAuthProvider, string> = { apple: "Apple로 계속하기", google: "Google로 계속하기", kakao: "카카오로 계속하기" };
+export function OnboardingRedesignScreen() {
+  return <AuthShell className="onboarding-redesign-screen">
+    <AuthHeader title="공감편지 소개" />
+    <div className="auth-scroll onboarding-redesign-scroll">
+      <section className="onboarding-redesign-hero">
+        <p>마음을 나누는 새로운 방법</p>
+        <h1>오늘의 마음을<br />편지에 담아보세요</h1>
+        <figure><img src="/assets/onboarding-new-hero.png" alt="편지지와 보랏빛 펜, 봉투가 놓인 나무 책상" /></figure>
+      </section>
+      <section className="onboarding-redesign-steps" aria-label="공감편지 이용 방법">
+        <article><span>01</span><div><h2>익명으로 마음을 남겨요</h2><p>이름을 드러내지 않고, 지금의 마음을 편지로 적을 수 있어요.</p></div></article>
+        <article><span>02</span><div><h2>누군가가 당신의 편지를 읽어요</h2><p>한 사람이 편지를 끝까지 읽고, 자신의 마음을 담아 답해요.</p></div></article>
+        <article><span>03</span><div><h2>답장을 기다리며 마음을 쉬어가요</h2><p>답장은 바로 오지 않을 수 있어요. 답장이 오기까지 시간이 필요해요.</p></div></article>
+      </section>
+      <aside className="onboarding-redesign-note"><strong>공감편지는 전문 상담이나 진단을 제공하지 않아요.</strong><p>지금 바로 도움이 필요한 상황이라면 가까운 사람이나 전문적인 도움을 먼저 찾아주세요.</p></aside>
+    </div>
+    <footer className="auth-actions auth-actions--stacked onboarding-redesign-actions">
+      <button className="auth-primary" type="button" onClick={() => navigateTo("/login")}>시작하기</button>
+      <button className="auth-text-action" type="button" onClick={() => navigateTo("/login")}>이미 이용하고 있어요</button>
+    </footer>
+  </AuthShell>;
+}
+
+const providerLabels: Record<MockAuthProvider, string> = { apple: "Apple로 계속하기", google: "Google로 계속하기", kakao: "토스로 계속하기" };
 
 export function LoginScreen() {
   const [snapshot, setSnapshot] = useState(getMockAuthSnapshot);
@@ -68,8 +90,7 @@ export function LoginScreen() {
     const timer = window.setTimeout(() => {
       const result = resolveMockLogin();
       setSnapshot(result);
-      if (result.state === "logged_in") replaceRoute(getPostLoginPath("/home"));
-      if (result.state === "new_user") replaceRoute("/terms-consent");
+      if (result.state === "logged_in" || result.state === "new_user") replaceRoute("/terms-consent");
     }, 760);
     return () => window.clearTimeout(timer);
   }, [loggingIn]);
@@ -106,7 +127,9 @@ export function LoginScreen() {
           disabled={loggingIn}
           onClick={() => start(provider)}
         >
-          <span className={`auth-provider-mark auth-provider-mark--${provider}`} aria-hidden="true">{provider === "apple" ? "●" : provider === "google" ? "G" : "K"}</span>
+          <span className={`auth-provider-mark auth-provider-mark--${provider}`} aria-hidden="true">
+            <img src={provider === "apple" ? "/assets/figma-login-apple.png" : provider === "google" ? "/assets/figma-login-google.png" : "/assets/logo_toss.png"} alt="" />
+          </span>
           {loggingIn && snapshot.pendingProvider === provider ? <span className="auth-loading-copy"><i className="auth-spinner" />로그인하고 있어요.</span> : providerLabels[provider]}
         </button>)}
       </section>
@@ -128,33 +151,24 @@ export function LoginScreen() {
   </AuthShell>;
 }
 
-const terms = ["서비스 이용약관", "개인정보 처리방침", "안전 운영 정책", "만 14세 이상입니다."] as const;
-
 export function TermsConsentScreen() {
-  const [checked, setChecked] = useState<boolean[]>([false, false, false, false]);
-  const [openTerm, setOpenTerm] = useState<string | undefined>();
-  const allChecked = checked.every(Boolean);
-  const toggleAll = () => setChecked(Array(terms.length).fill(!allChecked));
-  const toggle = (index: number) => setChecked((current) => current.map((value, position) => position === index ? !value : value));
-
   return <AuthShell className="terms-screen">
     <AuthHeader backTo="/login" />
-    <div className="auth-scroll">
-      <section className="auth-intro-copy auth-intro-copy--terms">
-        <p>처음 시작하기 전</p>
+    <div className="auth-scroll terms-policy-scroll">
+      <section className="terms-consent-heading">
         <h1>공감편지를 시작하기 전에<br />확인해주세요</h1>
       </section>
-      <section className="terms-list" aria-label="필수 동의">
-        <button type="button" className="terms-all" onClick={toggleAll} aria-pressed={allChecked}><span className="terms-check" aria-hidden="true">{allChecked ? "✓" : ""}</span>필수 항목 전체 동의</button>
-        {terms.map((term, index) => <div className="terms-row" key={term}>
-          <button type="button" className="terms-choice" onClick={() => toggle(index)} aria-pressed={checked[index]}><span className="terms-check" aria-hidden="true">{checked[index] ? "✓" : ""}</span><span>{term}</span><em>필수</em></button>
-          {index < 3 && <button className="terms-open" type="button" onClick={() => setOpenTerm(term)} aria-label={`${term} 안내 보기`}>보기</button>}
-        </div>)}
+      <section className="terms-policy-document" aria-label="서비스 이용약관">
+        <article><h2>1. 이용약관 동의</h2><p>공감편지를 이용함으로써 본 이용약관에 동의하게 됩니다. 서비스를 이용하기 전 아래 내용을 확인해주세요.</p></article>
+        <article><h2>2. 서비스 이용 방식</h2><p>공감편지는 익명으로 자신의 이야기를 편지로 작성하고, 다른 이용자의 편지를 읽고 답장을 전할 수 있는 서비스입니다. 내가 작성한 편지는 다른 익명의 이용자에게 전달되어 읽힐 수 있습니다. 편지를 받은 이용자에게 답장 의무는 없으며, 답장의 도착 여부나 시점은 보장되지 않습니다.</p></article>
+        <article><h2>3. 사용자 행동 규칙</h2><p>안전한 공감 공간을 위해 다음 행위는 금지됩니다.</p><ul><li>혐오 발언, 괴롭힘, 위협</li><li>성적으로 노골적이거나 부적절한 콘텐츠</li><li>스팸 또는 의미 없는 반복 콘텐츠</li><li>전화번호, 주소, SNS ID 등 개인 연락처 공유</li><li>다른 이용자에게 개인정보 또는 연락처를 요구하는 행위</li><li>불법적인 활동을 조장하는 내용</li></ul><aside>위반 시 콘텐츠가 제한 또는 삭제되거나 서비스 이용이 제한될 수 있습니다.</aside></article>
+        <article><h2>4. 콘텐츠 안전검토 및 신고</h2><p>편지와 답장은 안전한 서비스 제공을 위해 자동화된 시스템을 통해 검토될 수 있습니다. 신고된 콘텐츠는 운영자가 확인할 수 있으며, 이용약관이나 운영정책을 위반한 경우 필요한 조치가 이루어질 수 있습니다.</p></article>
+        <article><h2>5. 계정 및 콘텐츠 이용 제한</h2><p>이용약관을 위반한 경우 해당 콘텐츠를 삭제하거나 이용을 제한하고, 반복 또는 중대한 위반 시 계정을 정지하거나 삭제할 수 있습니다.</p></article>
+        <article><h2>6. 서비스의 범위</h2><p>공감편지는 이용자 간의 공감과 편지 교환을 돕는 서비스이며, 의료·심리치료 또는 전문 상담 서비스를 제공하지 않습니다.</p></article>
+        <article><h2>7. 이용 연령</h2><p>공감편지는 만 14세 이상의 이용자만 이용할 수 있습니다.</p></article>
       </section>
-      <p className="terms-note">최종 정책 문서는 실제 서비스 개발 단계에서 연결됩니다.</p>
     </div>
-    <footer className="auth-actions"><button className="auth-primary" disabled={!allChecked} type="button" onClick={() => { acceptTerms(); navigateTo("/anonymous-name"); }}>동의하고 계속하기</button></footer>
-    {openTerm && <div className="auth-dialog-backdrop" role="presentation"><section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="term-dialog-title"><p>필수 확인</p><h2 id="term-dialog-title">{openTerm}</h2><span>최종 정책 문서는 실제 서비스 개발 단계에서 연결됩니다.</span><button className="auth-primary" type="button" onClick={() => setOpenTerm(undefined)}>닫기</button></section></div>}
+    <footer className="auth-actions"><button className="auth-primary" type="button" onClick={() => { acceptTerms(); navigateTo("/nickname-entry"); }}>동의하고 시작하기</button></footer>
   </AuthShell>;
 }
 
@@ -199,7 +213,7 @@ export function AnonymousNameScreen() {
         <h1>나를 부를 이름을<br />정해볼까요?</h1>
         <p className="auth-helper anonymous-name-intro-helper">편지 속에서는 이 이름으로 서로를 불러요.</p>
         <section className="anonymous-name-field" aria-labelledby="anonymous-name-label">
-          <label id="anonymous-name-label" htmlFor="anonymous-name-input">익명 닉네임</label>
+          <label id="anonymous-name-label" htmlFor="anonymous-name-input">닉네임</label>
           <div className={`anonymous-name-input-wrap${changing ? " is-changing" : ""}`}>
             <input
               id="anonymous-name-input"
@@ -209,12 +223,11 @@ export function AnonymousNameScreen() {
               disabled={isCompleting}
               onChange={(event) => setName(event.target.value)}
               placeholder="예: 잔잔한 나무"
-              aria-describedby="anonymous-name-note anonymous-name-count"
+              aria-describedby="anonymous-name-count"
             />
             {name && <button className="anonymous-name-clear" type="button" disabled={isCompleting} onClick={() => setName("")} aria-label="입력한 이름 지우기">×</button>}
           </div>
           <div className="anonymous-name-field__meta">
-            <span id="anonymous-name-note">닉네임은 편지를 보낼 때만 사용돼요.</span>
             <span id="anonymous-name-count" aria-live="polite">{name.length} / 12</span>
           </div>
         </section>
@@ -224,6 +237,37 @@ export function AnonymousNameScreen() {
     </div>
     <footer className="auth-actions auth-actions--split anonymous-name-actions"><button className="auth-secondary" type="button" disabled={changing || isCompleting} onClick={nextName}>다른 이름 받기</button><button className={`auth-primary${isCompleting ? " is-completing" : ""}`} type="button" disabled={changing || !validName} aria-disabled={isCompleting} onClick={completeOnboarding}>이 이름으로 시작하기</button></footer>
     {isCompleting && <div className={`anonymous-name-welcome${isWelcomeVisible ? " is-visible" : ""}${isWelcomeLeaving ? " is-leaving" : ""}`} role="status" aria-live="polite"><p><strong>{welcomeName}</strong>님, 반가워요.</p></div>}
+  </AuthShell>;
+}
+
+export function DirectNicknameScreen() {
+  const [name, setName] = useState("");
+  const validName = Boolean(name.trim());
+  const recommendName = () => setName(generateAnonymousName(name || undefined));
+  const continueWithName = () => {
+    if (!validName) return;
+    confirmAnonymousName(name.trim());
+    navigateTo("/home");
+  };
+
+  return <AuthShell className="direct-nickname-screen">
+    <AuthHeader backTo="/terms-of-service" title="이름 정하기" />
+    <div className="auth-scroll direct-nickname-scroll">
+      <section className="direct-nickname-content" aria-labelledby="direct-nickname-title">
+        <h1 id="direct-nickname-title">나를 부를 이름을<br />정해볼까요?</h1>
+        <p>편지 속에서 나를 대신해 불러줄 이름이에요.</p>
+        <div className="direct-nickname-field">
+          <div className="direct-nickname-field__label"><label htmlFor="direct-nickname-input">이름</label></div>
+          <div className="direct-nickname-input-wrap">
+            <input id="direct-nickname-input" type="text" value={name} maxLength={12} onChange={(event) => setName(event.target.value.slice(0, 12))} placeholder="이름을 입력해주세요" aria-describedby="direct-nickname-help" autoFocus />
+            {name && <button className="anonymous-name-clear" type="button" onClick={() => setName("")} aria-label="입력한 이름 지우기">×</button>}
+          </div>
+          <div className="direct-nickname-field__meta"><p id="direct-nickname-help">12자 이내로 입력해주세요.</p><span aria-live="polite">{name.length} / 12</span></div>
+        </div>
+        <button className="direct-nickname-recommend" type="button" onClick={recommendName}>이름 추천 받기</button>
+      </section>
+    </div>
+    <footer className="auth-actions direct-nickname-actions"><button className="auth-primary" type="button" disabled={!validName} onClick={continueWithName}>이 이름으로 시작하기</button></footer>
   </AuthShell>;
 }
 

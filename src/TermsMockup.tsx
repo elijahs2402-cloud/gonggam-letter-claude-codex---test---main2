@@ -1,4 +1,4 @@
-import { navigateTo, navigateBack } from "./navigation";
+import { navigateBack, navigateTo } from "./navigation";
 
 const TERMS_SECTIONS = [
   {
@@ -44,105 +44,43 @@ export function TermsMockupScreen() {
   return (
     <main className="mobile-prototype auth-screen terms-screen">
 
-      {/* 상단 네비게이션 — terms-consent 페이지와 동일 */}
       <header className="auth-header">
-        <button type="button" onClick={() => navigateBack("/login")} aria-label="이전 화면으로 돌아가기">←</button>
-        <span>공감편지</span>
+        <button type="button" onClick={() => navigateBack("/my-space")} aria-label="이전 화면으로 돌아가기">←</button>
+        <span>서비스 이용약관</span>
         <i aria-hidden="true" />
       </header>
 
-      {/* 스크롤 영역 */}
-      <div className="auth-scroll">
-
-        {/* 타이틀 — terms-consent 페이지와 동일 구조 */}
-        <section className="auth-intro-copy auth-intro-copy--terms">
-          <p>처음 시작하기 전</p>
-          <h1>공감편지를 시작하기 전에<br />확인해주세요</h1>
-        </section>
-
-        {/* 구분선 */}
-        <div style={{ height: "1px", background: "rgba(188,146,62,0.35)", margin: "28px 0 28px" }} />
-
-        {/* 약관 섹션들 */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+      <div className="auth-scroll terms-policy-scroll">
+        <section className="terms-policy-document" aria-label="서비스 이용약관 본문">
           {TERMS_SECTIONS.map((section) => (
-            <section key={section.title}>
-              <h2 style={{
-                margin: "0 0 10px",
-                fontFamily: '"Noto Serif KR", serif',
-                fontSize: "14px",
-                fontWeight: 600,
-                color: "#292522",
-                letterSpacing: "-0.04em",
-                lineHeight: 1.4,
-              }}>{section.title}</h2>
+            <article key={section.title}>
+              <h2>{section.title}</h2>
 
               {section.body && (
-                <p style={{
-                  margin: section.list ? "0 0 12px" : "0",
-                  fontSize: "13px",
-                  color: "#5a5249",
-                  lineHeight: 1.8,
-                  letterSpacing: "-0.01em",
-                  whiteSpace: "pre-line",
-                }}>{section.body}</p>
+                <p>{section.body}</p>
               )}
 
               {section.list && (
-                <ul style={{
-                  margin: "0 0 12px",
-                  padding: "0",
-                  listStyle: "none",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "7px",
-                }}>
+                <ul>
                   {section.list.map((item) => (
-                    <li key={item} style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "10px",
-                      fontSize: "13px",
-                      color: "#5a5249",
-                      lineHeight: 1.7,
-                      letterSpacing: "-0.01em",
-                    }}>
-                      <span style={{
-                        flexShrink: 0,
-                        marginTop: "8px",
-                        width: "4px",
-                        height: "4px",
-                        borderRadius: "50%",
-                        background: "#9c7c3d",
-                      }} />
-                      {item}
-                    </li>
+                    <li key={item}>{item}</li>
                   ))}
                 </ul>
               )}
 
               {section.footer && (
-                <p style={{
-                  margin: "0",
-                  padding: "10px 14px",
-                  borderLeft: "2px solid rgba(188,146,62,0.5)",
-                  fontSize: "12px",
-                  color: "#766c61",
-                  lineHeight: 1.7,
-                  background: "rgba(188,146,62,0.06)",
-                }}>{section.footer}</p>
+                <aside>{section.footer}</aside>
               )}
-            </section>
+            </article>
           ))}
-        </div>
+        </section>
       </div>
 
-      {/* 고정 하단 버튼 — auth-actions 클래스로 동일한 스타일 */}
       <footer className="auth-actions">
         <button
           type="button"
           className="auth-primary"
-          onClick={() => navigateTo("/anonymous-name")}
+          onClick={() => navigateTo("/nickname-entry")}
         >
           동의하고 계속하기
         </button>

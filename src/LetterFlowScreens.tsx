@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { getCurrentAppSearchParams, navigateBack, navigateTo } from "./navigation";
 import { assignLetterToReader, createLetter, extendLetterWaiting, getCurrentUserId, getLetterById, getLetters, markReplyOpened, redistributeLetter, saveLetter, sendReply, transitionLetterStatus, withdrawLetter, type Letter } from "./letters";
 import { getCurrentAnonymousName } from "./mockAuth";
@@ -23,12 +23,16 @@ function FlowHeader({ title, fallback = "/home" }: { title: string; fallback?: s
   return <header className="flow-header"><button type="button" onClick={() => navigateBack(fallback)} aria-label="이전으로 돌아가기">←</button><strong>{title}</strong><span aria-hidden="true" /></header>;
 }
 
-function FocusShell({ title, children, fallback, onBack, action, className = "", scrollClassName = "" }: { title: string; children: React.ReactNode; fallback?: string; onBack?: () => void; action?: React.ReactNode; className?: string; scrollClassName?: string }) {
-  return <main className={`mobile-prototype letter-flow-screen ${className}`.trim()}><header className="flow-header"><button type="button" onClick={onBack ?? (() => navigateBack(fallback ?? "/home"))} aria-label="이전으로 돌아가기">←</button><strong>{title}</strong><span aria-hidden="true" /></header><div className={`letter-flow-scroll ${scrollClassName}`.trim()}>{children}</div>{action}</main>;
+function FocusShell({ title, children, fallback, onBack, action, headerAction, className = "", scrollClassName = "" }: { title: string; children: React.ReactNode; fallback?: string; onBack?: () => void; action?: React.ReactNode; headerAction?: React.ReactNode; className?: string; scrollClassName?: string }) {
+  return <main className={`mobile-prototype letter-flow-screen ${className}`.trim()}><header className={`flow-header${headerAction ? " flow-header--action" : ""}`}><button type="button" onClick={onBack ?? (() => navigateBack(fallback ?? "/home"))} aria-label="이전으로 돌아가기">←</button><strong>{title}</strong>{headerAction ?? <span aria-hidden="true" />}</header><div className={`letter-flow-scroll ${scrollClassName}`.trim()}>{children}</div>{action}</main>;
 }
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
+}
+
+function formatDateWithYear(value: string) {
+  return new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
 }
 
 function formatLetterReadTime(value: string) {
@@ -48,23 +52,44 @@ function MissingLetterScreen({ fallback = "/mailbox" }: { fallback?: string }) {
   return <FocusShell title="편지" fallback={fallback}><section className="flow-message"><h1>편지를 찾을 수 없어요</h1><p>다시 편지함에서 확인해주세요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(fallback)}>돌아가기</button></section></FocusShell>;
 }
 
-function DraftExitDialog({ kind, onContinue, onSaveAndLeave, onDiscardAndLeave }: { kind: "letter" | "reply"; onContinue: () => void; onSaveAndLeave: () => void; onDiscardAndLeave: () => void }) {
+function DraftExitDialog({ kind, onContinue, onSaveAndLeave, onDiscardAndLeave, isSaving = false }: { kind: "letter" | "reply"; onContinue: () => void; onSaveAndLeave: () => void; onDiscardAndLeave: () => void; isSaving?: boolean }) {
   const isLetter = kind === "letter";
-  return <div className="draft-exit-overlay" role="dialog" aria-modal="true" aria-labelledby="draft-exit-title"><section><h2 id="draft-exit-title">아직 보내지 않은 {isLetter ? "이야기" : "답장"}가 있어요</h2><p>작성한 내용은 임시로 보관할 수 있어요.</p><button className="flow-primary-button" type="button" onClick={onContinue}>이어서 쓰기</button><button className="flow-secondary-button" type="button" onClick={onSaveAndLeave}>임시로 보관하고 나가기</button><button className="flow-text-button" type="button" onClick={onDiscardAndLeave}>{isLetter ? "작성 내용" : "답장"} 지우고 나가기</button></section></div>;
+  return <div className="draft-exit-overlay" role="dialog" aria-modal="true" aria-labelledby="draft-exit-title">
+    <section className="draft-exit-panel">
+      <div className="draft-exit-copy">
+        <h2 id="draft-exit-title">아직 보내지 않은 {isLetter ? "이야기가" : "답장이"} 있어요</h2>
+        <p>작성한 내용은 임시로 보관할 수 있어요.</p>
+      </div>
+      <div className="draft-exit-actions">
+        <button className="flow-primary-button" type="button" onClick={onContinue} disabled={isSaving}>이어서 쓰기</button>
+        <button className={`flow-secondary-button draft-exit-save-button${isSaving ? " is-saving" : ""}`} type="button" onClick={onSaveAndLeave} disabled={isSaving}>{isSaving ? <><span>보관 중</span><i className="draft-exit-saving-dots" aria-label="보관 중"><b /><b /><b /></i></> : "임시로 보관하고 나가기"}</button>
+        <button className="flow-text-button" type="button" onClick={onDiscardAndLeave} disabled={isSaving}>{isLetter ? "작성 내용" : "답장"} 지우고 나가기</button>
+      </div>
+    </section>
+  </div>;
 }
 
 export function WriteLetterFlowScreen() {
   const userId = getCurrentUserId();
   const initial = useMemo(() => getLetterDraft(userId), [userId]);
   const [content, setContent] = useState(initial?.content ?? "");
-  const [anonymousName, setAnonymousName] = useState(initial?.anonymousName ?? "");
+  const [anonymousName] = useState(initial?.anonymousName?.trim() || getCurrentAnonymousName());
   const [notice, setNotice] = useState("");
-  const [showRecovery, setShowRecovery] = useState(Boolean(initial?.content.trim()));
-  const [confirmNew, setConfirmNew] = useState(false);
   const [showExit, setShowExit] = useState(false);
+  const [isSavingAndLeaving, setIsSavingAndLeaving] = useState(false);
   const [writeState, setWriteState] = useState<"empty" | "writing" | "saved" | "error">(initial?.content.trim() ? "writing" : "empty");
+  const contentInputRef = useRef<HTMLTextAreaElement>(null);
+  const characterCountRef = useRef<HTMLElement>(null);
   const meaningfulContentLength = content.replace(/\s/g, "").length;
   const writingStateLabel = writeState === "saved" ? "임시 저장 완료" : writeState === "error" ? "저장하지 못했어요" : writeState === "writing" ? "작성 중" : "작성 전";
+
+  useLayoutEffect(() => {
+    const input = contentInputRef.current;
+    if (!input) return;
+    input.style.height = "auto";
+    const nextHeight = Math.max(260, input.scrollHeight);
+    input.style.height = `${nextHeight}px`;
+  }, [content]);
 
   function saveNow() {
     const saved = Boolean(updateLetterDraft(userId, { content, anonymousName, stage: "writing" }));
@@ -79,8 +104,15 @@ export function WriteLetterFlowScreen() {
     navigateTo("/letter-preview");
   }
 
-  const leave = () => { if (content.trim()) setShowExit(true); else navigateTo("/home"); };
-  return <FocusShell title="편지 쓰기" onBack={leave} action={!showRecovery ? <div className="flow-fixed-action flow-fixed-action--split"><button className="flow-secondary-button" type="button" onClick={() => { if (!saveNow()) setNotice("임시 저장하지 못했어요. 작성한 내용은 현재 화면에 남아 있어요."); }}>임시 저장</button><button className="flow-primary-button" type="button" onClick={next} disabled={meaningfulContentLength < 10}>다음</button></div> : undefined}><section className="letter-compose-intro"><h1>나의 이야기를<br />들려주세요</h1><p>정리되지 않아도, 한 문장도 괜찮아요.</p><img src="/assets/write-letter-object-reframed.png" alt="펜과 편지지, 잉크병" /></section>{showRecovery ? <section className="draft-recovery"><h2>쓰다 만 편지가 있어요</h2><p>이어서 쓸까요?</p><button className="flow-primary-button" type="button" onClick={() => setShowRecovery(false)}>이어서 쓰기</button><button className="flow-secondary-button" type="button" onClick={() => setConfirmNew(true)}>새로 쓰기</button>{confirmNew && <div className="draft-inline-confirm"><p>기존 초안을 지울까요? 지우면 다시 복구할 수 없어요.</p><button type="button" onClick={() => { deleteLetterDraft(userId); setContent(""); setAnonymousName(""); setShowRecovery(false); setConfirmNew(false); }}>초안 지우기</button><button type="button" onClick={() => setConfirmNew(false)}>계속 보관하기</button></div>}</section> : <><div className="letter-compose-meta"><p className="flow-notice flow-notice--letter" role="status">{notice}</p><small className={`letter-write-state is-${writeState}`} role="status">{writingStateLabel}</small></div><section className="letter-compose-paper"><div className="letter-compose-writing"><label htmlFor="letter-content">편지 내용</label><textarea id="letter-content" value={content} onChange={(event) => { const nextContent = event.target.value; setContent(nextContent); setNotice(""); setWriteState(nextContent.trim() ? "writing" : "empty"); }} placeholder="마음을 10자 이상 적어주세요." rows={12} /><small className="letter-compose-character-count">글자 수 {meaningfulContentLength}자</small></div><aside className="letter-compose-guidance"><strong>마음을 보내기 전에</strong><p>이름, 연락처, 주소, 학교나 회사 이름처럼<br />나를 알아볼 수 있는 정보는 적지 말아주세요.</p></aside></section></>}{showExit && <DraftExitDialog kind="letter" onContinue={() => setShowExit(false)} onSaveAndLeave={() => { saveNow(); navigateTo("/home"); }} onDiscardAndLeave={() => { deleteLetterDraft(userId); navigateTo("/home"); }} />}</FocusShell>;
+  const goHome = () => {
+    if (content.trim()) {
+      setShowExit(true);
+      return;
+    }
+    navigateTo("/home");
+  };
+  const action = <div className="flow-fixed-action flow-fixed-action--split"><button className="flow-secondary-button" type="button" onClick={() => { if (!saveNow()) setNotice("임시 저장하지 못했어요. 작성한 내용은 현재 화면에 남아 있어요."); }}>임시 저장</button><button className="flow-primary-button" type="button" onClick={next} disabled={meaningfulContentLength < 10}>다음</button></div>;
+  return <FocusShell title="편지 쓰기" onBack={goHome} className="write-letter-screen--figma" action={action}><section className="letter-compose-intro"><h1>나의 이야기를<br />들려주세요</h1><p>정리되지 않아도, 한 문장도 괜찮아요.</p><img src="/assets/write-letter-object-reframed.png" alt="펜과 편지지, 잉크병" /></section><aside className="letter-compose-guidance"><strong>✻ <span>마음을 보내기 전에</span></strong><p>이름, 연락처, 주소, 학교나 회사 이름처럼<br />나를 알아볼 수 있는 정보는 적지 말아주세요.</p></aside><section className="letter-compose-paper"><div className="letter-compose-writing"><div className="letter-compose-field-heading"><label htmlFor="letter-content">편지 내용</label><small className={`letter-write-state is-${writeState}`} role="status">{writingStateLabel}</small></div><p className="flow-notice flow-notice--letter" role="status">{notice}</p><textarea ref={contentInputRef} id="letter-content" value={content} onChange={(event) => { const nextContent = event.target.value; setContent(nextContent); setNotice(""); setWriteState(nextContent.trim() ? "writing" : "empty"); }} placeholder="마음을 10자 이상 적어주세요." rows={12} /><small ref={characterCountRef} className="letter-compose-character-count">글자 수 {meaningfulContentLength}자</small></div></section>{showExit && <DraftExitDialog kind="letter" isSaving={isSavingAndLeaving} onContinue={() => setShowExit(false)} onSaveAndLeave={() => { if (isSavingAndLeaving) return; setIsSavingAndLeaving(true); window.setTimeout(() => { if (!saveNow()) { setNotice("임시 저장하지 못했어요. 작성한 내용은 현재 화면에 남아 있어요."); setIsSavingAndLeaving(false); return; } window.sessionStorage.setItem("gonggam-letter:draft-saved-toast", "letter-saved"); window.localStorage.setItem("gonggam-letter:draft-saved-toast-pending", "letter-saved"); navigateTo("/home?toast=letter-saved"); }, 640); }} onDiscardAndLeave={() => { deleteLetterDraft(); navigateTo("/home"); }} />}</FocusShell>;
 }
 
 export function LetterPreviewScreen() {
@@ -98,19 +130,19 @@ export function LetterPreviewScreen() {
       navigateTo("/letter-safety-review");
       return;
     }
-    const letter = createLetter({ senderId: userId, anonymousName: draft.anonymousName, content: draft.content, sourceDraftId: draft.id });
+    const letter = createLetter({ senderId: userId, anonymousName: draft.anonymousName.trim() || getCurrentAnonymousName(), content: draft.content, sourceDraftId: draft.id });
     if (!getLetterById(letter.id)) { setNotice("내용을 확인하지 못했어요. 작성한 내용은 그대로 보관되어 있어요."); return; }
     resolveDeliveryIssues("letter-send", undefined, userId);
     clearLetterDraft();
     navigateTo(`/letter-sent?id=${encodeURIComponent(letter.id)}`);
   }
-  return <FocusShell title="편지 미리보기" fallback="/write-letter"><section className="flow-review"><h1>편지 미리보기</h1><p>이 편지는 익명으로 전달돼요.<br />나를 알아볼 수 있는 정보가 들어 있지 않은지 한 번만 확인해주세요.</p><article className="flow-letter-paper"><span>{draft.anonymousName?.trim() || getCurrentAnonymousName() || "이름 없는 편지"}</span><blockquote>{draft.content}</blockquote></article><section className="flow-expectation-note" aria-label="전달 안내"><strong>보내기 전에 알려드려요.</strong><p>답장은 바로 도착하지 않을 수 있어요. 한 사람이 편지를 읽고 자신의 말로 답장을 전해요.</p><p>보낸 뒤에는 편지함에서 현재 상태를 확인할 수 있어요.</p></section><p className="flow-safety-note">이름, 연락처, 주소처럼 나를 알아볼 수 있는 정보는 적지 않는 편이 좋아요.</p><p className="flow-notice" role="status">{notice}</p>{notice && <button className="flow-text-button" type="button" onClick={() => navigateTo("/write-letter")}>편지로 돌아가기</button>}</section><div className="flow-fixed-action flow-fixed-action--split"><button type="button" className="flow-secondary-button" onClick={() => { updateLetterDraft(userId, { stage: "writing" }); navigateTo("/write-letter"); }}>수정하기</button><button type="button" className="flow-primary-button" onClick={submit}>편지 보내기</button></div></FocusShell>;
+  return <FocusShell title="편지 미리보기" fallback="/write-letter" className="letter-preview-screen" action={<div className="flow-fixed-action flow-fixed-action--split"><button type="button" className="flow-secondary-button" onClick={() => { updateLetterDraft(userId, { stage: "writing" }); navigateTo("/write-letter"); }}>수정하기</button><button type="button" className="flow-primary-button" onClick={submit}>편지 보내기</button></div>}><section className="flow-review"><h1>편지 미리보기</h1><p>나를 알아볼 수 있는 정보가 들어 있지 않은지<br />한 번만 더 확인해주세요.</p><article className="flow-letter-paper"><span className="my-letter-waiting-quote my-letter-waiting-quote--open" aria-hidden="true">“</span><blockquote>{draft.content}</blockquote><span className="my-letter-waiting-quote my-letter-waiting-quote--close" aria-hidden="true">”</span><span className="letter-preview-signature">─ {draft.anonymousName.trim() || getCurrentAnonymousName()}</span></article><p className="flow-notice" role="status">{notice}</p>{notice && <button className="flow-text-button" type="button" onClick={() => navigateTo("/write-letter")}>편지로 돌아가기</button>}</section></FocusShell>;
 }
 
 export function LetterSentScreen({ letterId }: { letterId?: string }) {
   const letter = letterId ? getLetterById(letterId) : undefined;
   if (!letter) return <MissingLetterScreen fallback="/mailbox" />;
-  return <FocusShell title="발송 완료" fallback="/home"><section className="flow-complete"><img src="/assets/reply-sent-lavender-envelope.png" alt="봉인된 편지 봉투" /><h1>편지를 잘 맡아두었어요</h1><p>당신의 이야기를 천천히 읽어줄 사람에게 전달할게요.</p><small className="flow-state-helper">누가 읽고 있는지와 답장 도착 여부는 편지함에서 확인할 수 있어요.</small><div><button className="flow-primary-button" type="button" onClick={() => navigateTo(`/mailbox/my/${encodeURIComponent(letter.id)}`)}>내 편지 보기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></div></section></FocusShell>;
+  return <FocusShell title="발송 완료" fallback="/home"><section className="flow-complete"><img src="/assets/reply-sent-lavender-envelope.png" alt="봉인된 편지 봉투" /><h1>편지를 보냈어요.</h1><p>당신의 이야기를 누군가에게 전달할게요.</p><div><button className="flow-primary-button" type="button" onClick={() => navigateTo(`/mailbox/my/${encodeURIComponent(letter.id)}`)}>내 편지 보기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></div></section></FocusShell>;
 }
 
 export function WaitingLettersScreen() {
@@ -174,6 +206,7 @@ export function ReaderPromiseScreen({ letterId }: { letterId?: string }) {
 
 export function ReadLetterFlowScreen({ letterId, assignedReaderMode = false }: { letterId?: string; assignedReaderMode?: boolean }) {
   if (letterId?.startsWith("waiting-inline-test-")) ensureWaitingListTestLetters(getCurrentUserId());
+  if (letterId?.startsWith("sample-waiting-letter-")) seedSampleLetters();
   const letter = letterId ? getLetterById(letterId) : undefined;
   if (!letter) return <MissingLetterScreen fallback="/waiting-letters" />;
   if (assignedReaderMode && (letter.assignedReaderId !== getCurrentUserId() || !["assigned", "read", "waiting_for_reply"].includes(letter.status) || getLetterReturn(letter.id, getCurrentUserId()))) return <MissingLetterScreen fallback="/waiting-letters" />;
@@ -186,8 +219,33 @@ export function ReadLetterFlowScreen({ letterId, assignedReaderMode = false }: {
   if (getLetterReturn(letter.id, getCurrentUserId())) return <FocusShell title="편지 읽기" fallback="/waiting-letters"><section className="flow-message"><h1>이미 돌려보낸 편지예요.</h1><p>이 편지는 다른 사람이 이어서 읽을 수 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/waiting-letters")}>다른 편지 보기</button></section></FocusShell>;
   if (isUserBlocked(getCurrentUserId(), letter.senderId)) return <FocusShell title="편지 읽기" fallback="/waiting-letters"><section className="flow-message"><h1>차단한 사용자의 콘텐츠예요.</h1><p>안전을 위해 이 내용은 기본적으로 숨겨져 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/waiting-letters")}>이전 화면으로 돌아가기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/safety-management")}>안전 관리에서 확인</button></section></FocusShell>;
   if (letter.assignedReaderId && letter.assignedReaderId !== getCurrentUserId()) return <FocusShell title="편지 읽기" fallback="/waiting-letters"><section className="flow-message"><h1>이 편지는 다른 사람이<br />먼저 맡았어요.</h1><p>다른 기다리는 마음을 만나볼 수 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/waiting-letters")}>다른 편지 보기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></FocusShell>;
-  const takeLetter = () => navigateTo(hasAcceptedReaderGuidance() ? `/assign-letter/${encodeURIComponent(letter.id)}` : `/reader-promise?id=${encodeURIComponent(letter.id)}`);
-  return <FocusShell title="편지 읽기" fallback={assignedReaderMode ? `/write-reply/${encodeURIComponent(letter.id)}` : "/waiting-letters"} className="letter-flow-screen--active-reader" scrollClassName="active-reading-scroll" action={<div className={`flow-fixed-action flow-fixed-action--split${assignedReaderMode ? " flow-fixed-action--single" : ""}`} >{!assignedReaderMode && <button className="flow-secondary-button" type="button" onClick={() => navigateTo("/waiting-letters")}>다른 편지 보기</button>}<button className="flow-primary-button" type="button" onClick={assignedReaderMode ? () => navigateTo(`/write-reply/${encodeURIComponent(letter.id)}`) : takeLetter}>{assignedReaderMode ? "편지 계속 쓰기" : "이 편지를 맡을게요"}</button></div>}><section className="active-reading-room" aria-label="조용한 편지 읽기 공간"><div className="active-reading-room-copy"><p className="active-reading-kicker"><time dateTime={letter.createdAt}>{formatLetterReadTime(letter.createdAt)}</time></p><h1><strong>{letter.anonymousName}</strong>님이<br />보낸 편지</h1></div><img src="/assets/read-letter-room-framed-two-trimmed.png" alt="" aria-hidden="true" /></section><div className="active-reading-mat"><article className="active-reading-paper"><span className="active-reading-quote active-reading-quote--open" aria-hidden="true">“</span><blockquote>{letter.content}</blockquote><span className="active-reading-quote active-reading-quote--close" aria-hidden="true">”</span><div className="active-reading-report-area"><button className="flow-text-button active-reading-report" type="button" onClick={() => navigateTo(`/report-letter/${encodeURIComponent(letter.id)}`)}>신고하기</button></div></article></div><section className="active-reading-helper"><img src="/assets/decor.svg" alt="" aria-hidden="true" /><p><strong>답장은 서두르지 않아도 괜찮아요.</strong><span>이 편지를 맡으면, 한 사람의 마음에 답장을 남길 수 있어요.</span></p></section></FocusShell>;
+  const alreadyAssignedToCurrentUser = letter.assignedReaderId === getCurrentUserId();
+  const continueTo = (destination: "reply" | "return") => {
+    if (alreadyAssignedToCurrentUser) {
+      navigateTo(`/${destination === "reply" ? "write-reply" : "return-letter"}/${encodeURIComponent(letter.id)}`);
+      return;
+    }
+
+    const result = assignLetterToReader(letter.id, getCurrentUserId());
+    if (result.ok) {
+      navigateTo(`/${destination === "reply" ? "write-reply" : "return-letter"}/${encodeURIComponent(letter.id)}`);
+      return;
+    }
+    navigateTo("/waiting-letters");
+  };
+  const hasTakenLetter = assignedReaderMode || alreadyAssignedToCurrentUser;
+  // The first-meeting fixture always presents the same choose-to-reply-or-return action pair.
+  const useFirstMeetingActions = letter.id === "sample-waiting-letter-one";
+  const showTakenLetterActions = hasTakenLetter && !useFirstMeetingActions;
+  const startReply = () => {
+    if (useFirstMeetingActions) {
+      if (!alreadyAssignedToCurrentUser) assignLetterToReader(letter.id, getCurrentUserId());
+      navigateTo(`/write-reply/${encodeURIComponent(letter.id)}`);
+      return;
+    }
+    continueTo("reply");
+  };
+  return <FocusShell title="편지 읽기" fallback={showTakenLetterActions ? `/write-reply/${encodeURIComponent(letter.id)}` : "/waiting-letters"} className="letter-flow-screen--active-reader" scrollClassName="active-reading-scroll" action={<div className={`flow-fixed-action flow-fixed-action--split${showTakenLetterActions ? " flow-fixed-action--single" : ""}`} >{!showTakenLetterActions && <button className="flow-secondary-button" type="button" onClick={() => continueTo("return")}>안 받을게요</button>}<button className="flow-primary-button" type="button" onClick={startReply}>{showTakenLetterActions ? "편지 계속 쓰기" : "이 편지에 답장하기"}</button></div>}><section className="active-reading-room" aria-label="조용한 편지 읽기 공간"><div className="active-reading-room-copy"><p className="active-reading-kicker"><time dateTime={letter.createdAt}>{formatLetterReadTime(letter.createdAt)}</time></p><h1><strong>{letter.anonymousName}</strong>님이<br />보낸 편지</h1></div><img src="/assets/read-letter-room-framed-two-trimmed.png" alt="" aria-hidden="true" /></section><div className="active-reading-mat"><article className="active-reading-paper"><span className="active-reading-quote active-reading-quote--open" aria-hidden="true">“</span><blockquote>{letter.content}</blockquote><span className="active-reading-quote active-reading-quote--close" aria-hidden="true">”</span><div className="active-reading-report-area"><button className="flow-text-button active-reading-report" type="button" onClick={() => navigateTo(`/report-letter/${encodeURIComponent(letter.id)}`)}>신고하기</button></div></article></div><section className="active-reading-helper"><img src="/assets/decor.svg" alt="" aria-hidden="true" /><p><strong>당신의 마음을 전해주세요</strong><span>짧은 한마디도 누군가에게 힘이 될 수 있어요.</span></p></section></FocusShell>;
 }
 
 export function AssignedLetterFlowScreen({ letterId }: { letterId?: string }) {
@@ -215,24 +273,57 @@ export function AssignLetterScreen({ letterId }: { letterId?: string }) {
 export function WriteReplyFlowScreen({ letterId }: { letterId?: string }) {
   const currentUserId = getCurrentUserId();
   if (letterId === "reply-review-test") ensureReplyReviewTestLetter(currentUserId);
+  if (letterId?.startsWith("sample-waiting-letter-")) seedSampleLetters();
   const forcedTestLetter = letterId?.startsWith("waiting-inline-test-") && getCurrentAppSearchParams().get("force") === "1" ? forceReplyTestAssignment(letterId, currentUserId) : undefined;
-  const letter = forcedTestLetter ?? (letterId ? getLetterById(letterId) : undefined);
+  let letter = forcedTestLetter ?? (letterId ? getLetterById(letterId) : undefined);
+  // This first-meeting prototype is entered directly from the read screen.
+  // Restore its reply-ready state even when a prior prototype session left no stored fixture.
+  if (letterId === "sample-waiting-letter-one" && (!letter || letter.assignedReaderId !== currentUserId || !["assigned", "read", "waiting_for_reply"].includes(letter.status))) {
+    const now = new Date().toISOString();
+    letter = saveLetter({
+      id: "sample-waiting-letter-one",
+      senderId: letter?.senderId ?? "sample-sender-dawn",
+      anonymousName: letter?.anonymousName ?? "새벽의 편지",
+      content: letter?.content ?? "요즘은 누구에게도 쉽게 말하지 못한 마음이 있어요. 그냥 누군가가 끝까지 읽어준다면 조금 괜찮아질 것 같아요.",
+      createdAt: letter?.createdAt ?? now,
+      updatedAt: now,
+      retryCount: letter?.retryCount ?? 0,
+      ...letter,
+      status: "assigned",
+      assignedReaderId: currentUserId,
+      assignedAt: now,
+      lastStatusChangedAt: now,
+    });
+  }
   const initial = useMemo(() => letterId ? getReplyDraft(letterId, currentUserId) : undefined, [letterId, currentUserId]);
   const [content, setContent] = useState(initial?.content ?? "");
   const [notice, setNotice] = useState("");
   const [showExit, setShowExit] = useState(false);
+  const [isSavingReplyAndLeaving, setIsSavingReplyAndLeaving] = useState(false);
   const [replyWriteState, setReplyWriteState] = useState<"empty" | "writing" | "saved" | "error">(initial?.content.trim() ? "writing" : "empty");
+  const replyContentInputRef = useRef<HTMLTextAreaElement>(null);
+  const replyCharacterCountRef = useRef<HTMLElement>(null);
   const meaningfulReplyLength = content.replace(/\s/g, "").length;
   if (letter?.status === "withdrawn") return <FocusShell title="답장 쓰기" fallback="/waiting-letters"><section className="flow-message"><h1>편지의 주인이<br />편지를 거두었어요</h1><p>더 이상 답장을 쓸 수 없어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/waiting-letters")}>기다리는 편지 목록으로</button></section></FocusShell>;
   if (letter && getLetterReturn(letter.id, currentUserId)) return <FocusShell title="답장 쓰기" fallback="/waiting-letters"><section className="flow-message"><h1>이미 돌려보낸 편지예요.</h1><p>이 편지는 다른 사람이 이어서 읽을 수 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/waiting-letters")}>기다리는 편지 보기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></FocusShell>;
   if (!letter || letter.assignedReaderId !== currentUserId || !["assigned", "read", "waiting_for_reply"].includes(letter.status)) return <MissingLetterScreen fallback="/waiting-letters" />;
   useEffect(() => { if (letter.status === "assigned") transitionLetterStatus(letter.id, "waiting_for_reply", currentUserId, { waitingForReplyAt: new Date().toISOString() }); }, [letter.id, letter.status, currentUserId]);
+  useLayoutEffect(() => {
+    const input = replyContentInputRef.current;
+    if (!input) return;
+    const scroll = input.closest<HTMLElement>(".letter-flow-scroll");
+    const previousScrollTop = scroll?.scrollTop;
+    input.style.height = "auto";
+    const nextHeight = Math.max(410, input.scrollHeight);
+    input.style.height = `${nextHeight}px`;
+    if (scroll && previousScrollTop !== undefined) scroll.scrollTop = previousScrollTop;
+  }, [content]);
   const { saveNow } = useDraftAutosave({ content }, (value) => Boolean(updateReplyDraft(letter.id, currentUserId, { ...value, stage: "writing", letterStatusAtSave: letter.status })));
   function saveReplyNow() { const saved = saveNow(); setReplyWriteState(saved ? "saved" : "error"); return saved; }
   function next() { if (meaningfulReplyLength < 10) { setNotice("마음을 10자 이상 적어주세요."); return; } const draft = updateReplyDraft(letter.id, currentUserId, { content, stage: "review", letterStatusAtSave: letter.status }); if (!draft) { setNotice("임시 저장하지 못했어요. 작성한 내용은 현재 화면에 남아 있어요."); return; } navigateTo(`/reply-review/${encodeURIComponent(letter.id)}`); }
   const leave = () => { if (content.trim()) setShowExit(true); else navigateTo(`/assigned-letter/${encodeURIComponent(letter.id)}`); };
   const replyActions = <div className="flow-fixed-action flow-fixed-action--split reply-flow-fixed-action"><button type="button" className="flow-secondary-button" onClick={() => { if (!saveReplyNow()) setNotice("임시 저장하지 못했어요. 작성한 내용은 현재 화면에 남아 있어요."); }}>임시 저장</button><button type="button" className="flow-primary-button" onClick={next} disabled={meaningfulReplyLength < 10}>보내기 전 미리보기</button></div>;
-  return <FocusShell title="답장 쓰기" onBack={leave} action={replyActions}><section className="reply-compose-intro"><h1>{letter.anonymousName}님에게<br />마음을 전해주세요</h1><p>편지를 읽으며 이해한 마음을 전해주세요.</p><img src="/assets/write-letter-object-reframed.png" alt="펜과 편지지, 잉크병" /></section><div className="reply-compose-meta"><p className="flow-notice flow-notice--reply" role="status">{notice}</p><small className={`draft-save-state is-${replyWriteState}`} role="status">{replyWriteState === "saved" ? "임시 저장 완료" : replyWriteState === "error" ? "저장하지 못했어요" : replyWriteState === "writing" ? "작성 중" : "작성 전"}</small></div><section className="reply-compose-paper"><p className="reply-compose-recipient">{letter.anonymousName}에게</p><div className="reply-compose-writing"><textarea id="reply-content" aria-label="답장 내용" value={content} onChange={(event) => { const nextContent = event.target.value; setContent(nextContent); setNotice(""); setReplyWriteState(nextContent.trim() ? "writing" : "empty"); }} placeholder="마음을 10자 이상 적어주세요." rows={12} /><small>글자 수 {meaningfulReplyLength}자</small></div><aside className="reply-compose-guidance"><strong>마음을 전하기 전에</strong><p>상대방을 판단하거나 해결책을 서두르기보다,<br />편지를 읽으며 느낀 마음을 천천히 전해주세요.</p></aside><div className="reply-compose-letter-actions"><button className="flow-text-button" type="button" onClick={() => navigateTo(`/assigned-letter/${encodeURIComponent(letter.id)}`)}>편지 다시 읽기</button><button className="flow-text-button" type="button" onClick={() => navigateTo(`/return-letter/${encodeURIComponent(letter.id)}`)}>이 편지 돌려보내기</button></div></section>{showExit && <DraftExitDialog kind="reply" onContinue={() => setShowExit(false)} onSaveAndLeave={() => { saveReplyNow(); navigateTo(`/assigned-letter/${encodeURIComponent(letter.id)}`); }} onDiscardAndLeave={() => { deleteReplyDraft(letter.id, currentUserId); navigateTo(`/assigned-letter/${encodeURIComponent(letter.id)}`); }} />}</FocusShell>;
+  return <FocusShell title="답장 쓰기" onBack={leave} className="write-letter-screen--figma reply-compose-screen--figma" headerAction={<button className="reply-read-letter-button" type="button" onClick={() => navigateTo(`/assigned-letter/${encodeURIComponent(letter.id)}`)}><img src="/assets/reply-read-letter-flat-icon.png" alt="" aria-hidden="true" /><span>편지 다시 읽기</span></button>} action={replyActions}><section className="reply-compose-intro"><h1>{letter.anonymousName}님에게<br />마음을 전해주세요</h1><p>편지를 읽으며 이해한 마음을 전해주세요.</p><img src="/assets/write-letter-object-reframed.png" alt="펜과 편지지, 잉크병" /></section><aside className="reply-compose-guidance"><strong>✻ <span>마음을 전하기 전에</span></strong><p>상대방을 판단하거나 해결책을 서두르기보다,<br />편지를 읽으며 느낀 마음을 천천히 전해주세요.</p></aside><section className="reply-compose-paper"><div className="letter-compose-field-heading"><label className="reply-compose-recipient" htmlFor="reply-content">{letter.anonymousName}에게</label><small className={`letter-write-state is-${replyWriteState}`} role="status">{replyWriteState === "saved" ? "임시 저장 완료" : replyWriteState === "error" ? "저장하지 못했어요" : replyWriteState === "writing" ? "작성 중" : "작성 전"}</small></div><p className="flow-notice flow-notice--reply" role="status">{notice}</p><div className="reply-compose-writing"><textarea ref={replyContentInputRef} id="reply-content" aria-label="답장 내용" value={content} onChange={(event) => { const nextContent = event.target.value; setContent(nextContent); setNotice(""); setReplyWriteState(nextContent.trim() ? "writing" : "empty"); }} placeholder="마음을 10자 이상 적어주세요." rows={12} /><small ref={replyCharacterCountRef}>글자 수 {meaningfulReplyLength}자</small></div></section>{showExit && <DraftExitDialog kind="reply" isSaving={isSavingReplyAndLeaving} onContinue={() => setShowExit(false)} onSaveAndLeave={() => { if (isSavingReplyAndLeaving) return; setIsSavingReplyAndLeaving(true); window.setTimeout(() => { if (!saveReplyNow()) { setNotice("임시 저장하지 못했어요. 작성한 내용은 현재 화면에 남아 있어요."); setIsSavingReplyAndLeaving(false); return; } window.sessionStorage.setItem("gonggam-letter:draft-saved-toast", "reply-saved"); window.localStorage.setItem("gonggam-letter:draft-saved-toast-pending", "reply-saved"); navigateTo("/home?toast=reply-saved"); }, 640); }} onDiscardAndLeave={() => { deleteReplyDraft(letter.id, currentUserId); navigateTo("/home"); }} />}</FocusShell>;
 }
 
 function ensureReplyReviewTestLetter(userId: string) {
@@ -265,9 +356,28 @@ function ensureReplyReviewTestLetter(userId: string) {
 export function ReplyReviewScreen({ letterId }: { letterId?: string }) {
   const currentUserId = getCurrentUserId();
   if (letterId === "reply-review-test") ensureReplyReviewTestLetter(currentUserId);
+  if (letterId?.startsWith("sample-waiting-letter-")) seedSampleLetters();
   const forcedTestLetter = letterId?.startsWith("waiting-inline-test-") ? forceReplyTestAssignment(letterId, currentUserId) : undefined;
   if (forcedTestLetter) ensureForcedReplyTestDraft(forcedTestLetter.id, currentUserId);
-  const letter = forcedTestLetter ?? (letterId ? getLetterById(letterId) : undefined);
+  let letter = forcedTestLetter ?? (letterId ? getLetterById(letterId) : undefined);
+  if (letterId === "sample-waiting-letter-one" && (!letter || letter.assignedReaderId !== currentUserId || !["assigned", "read", "waiting_for_reply"].includes(letter.status))) {
+    const now = new Date().toISOString();
+    letter = saveLetter({
+      id: "sample-waiting-letter-one",
+      senderId: letter?.senderId ?? "sample-sender-dawn",
+      anonymousName: letter?.anonymousName ?? "새벽의 편지",
+      content: letter?.content ?? "요즘은 누구에게도 쉽게 말하지 못한 마음이 있어요. 그냥 누군가가 끝까지 읽어준다면 조금 괜찮아질 것 같아요.",
+      createdAt: letter?.createdAt ?? now,
+      updatedAt: now,
+      retryCount: letter?.retryCount ?? 0,
+      ...letter,
+      status: "waiting_for_reply",
+      assignedReaderId: currentUserId,
+      assignedAt: now,
+      waitingForReplyAt: now,
+      lastStatusChangedAt: now,
+    });
+  }
   const draft = letterId ? getReplyDraft(letterId, currentUserId) : undefined;
   const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -279,13 +389,13 @@ export function ReplyReviewScreen({ letterId }: { letterId?: string }) {
     if (shouldFailDraftOperation("reply-submit")) { recordDeliveryIssue("reply-send", letter.id, currentUserId); setNotice("답장을 보내지 못했어요. 작성한 내용은 그대로 보관되어 있어요."); return; }
     navigateTo(`/reply-sending/${encodeURIComponent(letter.id)}`);
   }
-  return <FocusShell title="편지 미리보기" fallback={`/write-reply/${letter.id}`} className="reply-review-screen"><section className="flow-review"><img className="reply-review-header-illustration" src="/assets/reply-review-open-letter-glasses.png" alt="" aria-hidden="true" /><h1>답장을 보내기 전에<br />살펴봐주세요.</h1><p className="reply-review-intro">나를 알아볼 수 있는 내용이 담기지는 않았는지,<br />한 번만 더 확인해주세요.</p><article className="flow-letter-paper reply-review-paper"><p className="reply-compose-recipient">{letter.anonymousName}에게</p><blockquote>{draft.content}</blockquote><small className="reply-review-edited-at">{formatDate(draft.updatedAt)}에 마지막으로 다듬었어요.</small></article><section className="reply-review-guidance" aria-label="보내기 전 점검"><h2>보내기 전, 잠시 살펴봐주세요.</h2><ul className="review-list"><li>상대를 판단하거나 비난하지 않았나요?</li><li>해결책을 강요하고 있지 않나요?</li><li>개인정보나 만남을 요청하고 있지 않나요?</li><li>이 편지를 실제로 읽은 마음이 담겨 있나요?</li></ul></section><p className="flow-notice" role="status">{notice}</p></section><div className="flow-fixed-action flow-fixed-action--split reply-review-fixed-action"><button type="button" className="flow-secondary-button" onClick={() => { updateReplyDraft(letter.id, currentUserId, { stage: "writing", letterStatusAtSave: letter.status }); navigateTo(`/write-reply/${encodeURIComponent(letter.id)}`); }}>다시 수정하기</button><button type="button" className="flow-primary-button" onClick={submit} disabled={submitting}>답장 보내기</button></div></FocusShell>;
+  return <FocusShell title="편지 미리보기" fallback={`/write-reply/${letter.id}`} className="reply-review-screen" action={<div className="flow-fixed-action flow-fixed-action--split reply-review-fixed-action"><button type="button" className="flow-secondary-button" onClick={() => { updateReplyDraft(letter.id, currentUserId, { stage: "writing", letterStatusAtSave: letter.status }); navigateTo(`/write-reply/${encodeURIComponent(letter.id)}`); }}>수정하기</button><button type="button" className="flow-primary-button" onClick={submit} disabled={submitting}>답장 보내기</button></div>}><section className="flow-review"><h1>답장을 보내기 전에<br />살펴봐주세요.</h1><p className="reply-review-intro">나를 알아볼 수 있는 내용이 담기지는 않았는지,<br />한 번만 더 확인해주세요.</p><img className="reply-review-header-illustration" src="/assets/reply-review-open-letter-glasses.png" alt="" aria-hidden="true" /><article className="flow-letter-paper reply-review-paper"><p className="reply-compose-recipient">{letter.anonymousName}에게</p><blockquote>{draft.content}</blockquote><small className="reply-review-edited-at">{formatDateWithYear(draft.updatedAt)}에 마지막으로 다듬었어요.</small></article><section className="reply-review-guidance" aria-label="보내기 전 점검"><h2>보내기 전, 잠시 살펴봐주세요.</h2><ul className="review-list"><li>상대를 판단하거나 비난하지 않았나요?</li><li>부적절하거나 불법적인 내용은 없나요?</li><li>개인정보나 연락처를 적지 않았나요?</li></ul></section><p className="flow-notice" role="status">{notice}</p></section></FocusShell>;
 }
 
 export function ReplySentScreen({ letterId }: { letterId?: string }) {
   const letter = letterId ? getLetterById(letterId) : undefined;
   if (!letter?.reply) return <MissingLetterScreen fallback="/mailbox" />;
-  return <FocusShell title="답장 완료" fallback="/home"><section className="flow-complete"><img src="/assets/reply-sent-lavender-envelope.png" alt="봉인된 편지 봉투" /><h1>따뜻한 마음을 전했어요</h1><p>당신의 답장이 편지의 주인에게 전달될 거예요.</p><div><button className="flow-primary-button" type="button" onClick={() => navigateTo(`/mailbox/replied/${encodeURIComponent(letter.id)}`)}>내가 답한 편지 보기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></div></section></FocusShell>;
+  return <FocusShell title="답장 완료" fallback="/home"><section className="flow-complete reply-sent-complete"><img src="/assets/reply-sent-lavender-envelope.png" alt="봉인된 편지 봉투" /><h1>따뜻한 마음을 전했어요</h1><p>당신의 답장이 편지의 주인에게 전달될 거예요.</p><div><button className="flow-primary-button" type="button" onClick={() => navigateTo(`/mailbox/replied/${encodeURIComponent(letter.id)}`)}>내가 답한 편지 보기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></div></section></FocusShell>;
 }
 
 export function ReplySendingTransitionScreen({ letterId }: { letterId?: string }) {
@@ -388,13 +498,18 @@ export function MyLetterDetailScreen({ letterId }: { letterId?: string }) {
   if (!letter || letter.senderId !== getCurrentUserId()) return <MissingLetterScreen />;
   const userId = getCurrentUserId(); const params = getCurrentAppSearchParams(); const showReply = params.get("reply") === "1" || Boolean(params.get("excerpt")); const replyHidden = Boolean(letter.reply && isContentHidden(userId, "reply", letter.reply.id)); const replyBlocked = Boolean(letter.reply && isUserBlocked(userId, letter.reply.writerId)); const focusExcerptId = params.get("excerpt") ?? undefined; const display = getSentLetterDisplayStatus(letter, userId);
   if (display.isDeleted) return <FocusShell title="내가 보낸 편지" fallback="/mailbox"><section className="flow-message"><h1>이 편지를 찾을 수 없어요.</h1><p>삭제되었거나 더 이상 접근할 수 없는 기록이에요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/mailbox")}>편지함으로 돌아가기</button></section></FocusShell>;
+  if (!letter.reply && !display.isRestricted && letter.status !== "withdrawn") return <FocusShell title="내가 보낸 편지" fallback="/mailbox" className="my-letter-waiting-screen" scrollClassName="my-letter-waiting-scroll" action={<div className="flow-fixed-action flow-fixed-action--single"><button className="flow-primary-button" type="button" onClick={() => navigateTo("/mailbox")}>편지함 가기</button></div>}><section className="my-letter-waiting" aria-label="내가 보낸 편지 공간"><header className="my-letter-waiting-heading"><h1><strong>답장</strong>을<br />기다리고 있어요</h1><img src="/assets/reply-sent-lavender-envelope.png" alt="보라색 봉인과 라벤더가 놓인 편지 봉투" /></header><article className="my-letter-waiting-paper"><header className="my-letter-waiting-paper-heading"><span>내가 보낸 편지</span><time dateTime={letter.createdAt}>{formatDateWithYear(letter.createdAt)}</time></header><span className="my-letter-waiting-quote my-letter-waiting-quote--open" aria-hidden="true">“</span><blockquote>{letter.content}</blockquote><span className="my-letter-waiting-quote my-letter-waiting-quote--close" aria-hidden="true">”</span><p>— {letter.anonymousName || "이름 없는 편지"}</p></article></section></FocusShell>;
   return <FocusShell title="내가 보낸 편지" fallback="/mailbox"><section className="letter-detail"><p className="detail-kicker">내가 보낸 편지</p><article className="flow-letter-paper"><blockquote>{letter.content}</blockquote></article><section className="detail-status-card"><strong>{display.label}</strong><p>{display.description}</p>{!display.isRestricted && !display.isDeleted && <button className="flow-secondary-button" type="button" onClick={() => navigateTo(display.kind === "delayed" ? `/letter-delay/${encodeURIComponent(letter.id)}` : `/letter-journey/${encodeURIComponent(letter.id)}`)}>{display.kind === "delayed" ? "기다림에 대해 살펴보기" : "편지의 여정 보기"}</button>}</section><dl><div><dt>현재 상태</dt><dd>{display.label}</dd></div><div><dt>보낸 날짜</dt><dd>{formatDate(letter.createdAt)}</dd></div>{letter.reply && <div><dt>답장 도착 날짜</dt><dd>{letter.repliedAt ? formatDate(letter.repliedAt) : "답장을 받았어요"}</dd></div>}</dl>{letter.reply ? (showReply ? <section className="detail-reply"><p>받은 답장 <button className="reply-more-button" type="button" onClick={() => navigateTo(`/report-reply/${encodeURIComponent(letter.id)}`)}>⋯</button></p>{replyBlocked ? <div className="content-restricted"><strong>차단한 사용자의 콘텐츠예요.</strong><span>안전을 위해 이 내용은 기본적으로 숨겨져 있어요.</span><button type="button" onClick={() => navigateTo("/safety-management")}>안전 관리에서 확인</button></div> : replyHidden ? <div className="content-restricted"><strong>숨긴 답장이에요.</strong><span>필요하면 다시 펼쳐볼 수 있어요.</span><button type="button" onClick={() => { revealContent(userId, "reply", letter.reply!.id); window.location.reload(); }}>답장 다시 보기</button><button type="button" onClick={() => navigateTo("/mailbox")}>편지함으로 돌아가기</button></div> : <><SealedReply letterId={letter.id} replyId={letter.reply.id} ownerId={userId} content={letter.reply.content} focusExcerptId={focusExcerptId} /><small>익명의 누군가 · {formatDate(letter.reply.createdAt)}</small><button className="detail-gratitude-button" type="button" onClick={() => navigateTo(`/gratitude/${encodeURIComponent(letter.id)}`)}>고마움 전하기</button></>}</section> : <section className="detail-reply-arrival"><strong>{display.hasUnreadReply ? "답장이 도착했어요." : "답장을 받았어요."}</strong><p>{display.hasUnreadReply ? "당신의 편지를 읽은 사람이 마음을 전했어요." : "도착한 답장을 다시 읽을 수 있어요."}</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(display.hasUnreadReply ? `/reply-arrived/${encodeURIComponent(letter.id)}` : `/mailbox/my/${encodeURIComponent(letter.id)}?reply=1`)}>{display.hasUnreadReply ? "답장 읽기" : "받은 답장 보기"}</button></section>) : display.isRestricted ? <p className="detail-waiting">현재 이 편지의 내용을 확인할 수 없어요.</p> : letter.status === "withdrawn" ? <p className="detail-waiting">이 편지는 조용히 거두었어요</p> : <><p className="detail-waiting">{display.description}</p>{display.kind === "delayed" && <button className="flow-text-button" type="button" onClick={() => navigateTo(`/letter-delay/${encodeURIComponent(letter.id)}`)}>답장이 늦어질 때 할 수 있는 일</button>}</>}</section></FocusShell>;
+}
+
+export function MyLetterRepliedDemoScreen() {
+  return <FocusShell title="내가 보낸 편지" fallback="/mailbox" className="my-letter-waiting-screen my-letter-replied-demo-screen" scrollClassName="my-letter-waiting-scroll"><section className="my-letter-waiting" aria-label="내가 보낸 편지 공간"><header className="my-letter-waiting-heading"><h1>내 마음에<br /><strong>답장</strong>이 도착했어요</h1><img src="/assets/reply-sent-lavender-envelope.png" alt="보라색 봉인과 라벤더가 놓인 편지 봉투" /></header><article className="my-letter-waiting-paper"><header className="my-letter-waiting-paper-heading"><span>내가 보낸 편지</span><time dateTime="2026-08-25T14:38:00+09:00">{formatDateWithYear("2026-08-25T14:38:00+09:00")}</time></header><span className="my-letter-waiting-quote my-letter-waiting-quote--open" aria-hidden="true">“</span><blockquote>요즘 자꾸 잠들기 전에 예전 생각이 나요. 괜찮다고 되뇌어도 마음 한켠이 계속 무거워서, 누군가에게 이 마음을 조용히 털어놓고 싶었어요. 읽어주셔서 고마워요.</blockquote><span className="my-letter-waiting-quote my-letter-waiting-quote--close" aria-hidden="true">”</span><p>— 조용한 별빛</p></article><div className="my-letter-reply-connector" aria-hidden="true"><span /></div><article className="my-letter-waiting-paper my-letter-reply-paper"><header className="my-letter-waiting-paper-heading"><span>받은 답장</span><time dateTime="2026-08-26T15:53:00+09:00">{formatDateWithYear("2026-08-26T15:53:00+09:00")}</time></header><span className="my-letter-waiting-quote my-letter-waiting-quote--open" aria-hidden="true">“</span><blockquote>이야기를 들려주셔서 고마워요. 무거운 마음을 안고도 이렇게 편지를 써주셔서, 그 마음이 저에게도 잘 전해졌어요. 오늘 밤은 조금 더 편안하시길 바라요.</blockquote><span className="my-letter-waiting-quote my-letter-waiting-quote--close" aria-hidden="true">”</span><p>— 익명의 누군가</p><div className="my-letter-reply-report"><button className="flow-text-button" type="button">신고하기</button></div></article></section></FocusShell>;
 }
 
 export function RepliedLetterDetailScreen({ letterId }: { letterId?: string }) {
   const letter = letterId ? getLetterById(letterId) : undefined;
   if (!letter?.reply || letter.reply.writerId !== getCurrentUserId()) return <MissingLetterScreen />;
-  return <FocusShell title="내가 답한 편지" fallback="/mailbox"><section className="letter-detail"><p className="detail-kicker">상대가 보낸 편지</p><article className="flow-letter-paper"><blockquote>{letter.content}</blockquote></article><section className="detail-reply"><p>내가 보낸 답장</p><SealedReply letterId={letter.id} replyId={letter.reply.id} ownerId={getCurrentUserId()} content={letter.reply.content} /><small>{formatDate(letter.reply.createdAt)}</small></section><dl><div><dt>완료 상태</dt><dd>답장을 전했어요</dd></div></dl></section></FocusShell>;
+  return <FocusShell title="내가 답한 편지" fallback="/mailbox" className="my-letter-waiting-screen my-letter-replied-demo-screen" scrollClassName="my-letter-waiting-scroll"><section className="my-letter-waiting replied-letter-detail" aria-label="내가 답한 편지"><header className="my-letter-waiting-heading"><h1>마음을 담아<br /><strong>답장</strong>을 전했어요</h1><img src="/assets/reply-sent-paper-airplane.png" alt="날아가는 종이비행기" /></header><article className="my-letter-waiting-paper"><header className="my-letter-waiting-paper-heading"><span>상대가 보낸 편지</span><time dateTime={letter.createdAt}>{formatDateWithYear(letter.createdAt)}</time></header><span className="my-letter-waiting-quote my-letter-waiting-quote--open" aria-hidden="true">“</span><blockquote>{letter.content}</blockquote><span className="my-letter-waiting-quote my-letter-waiting-quote--close" aria-hidden="true">”</span><p>— {letter.anonymousName || "이름 없는 편지"}</p></article><div className="my-letter-reply-connector" aria-hidden="true"><span /></div><article className="my-letter-waiting-paper my-letter-reply-paper"><header className="my-letter-waiting-paper-heading"><span>내가 보낸 답장</span><time dateTime={letter.reply.createdAt}>{formatDateWithYear(letter.reply.createdAt)}</time></header><span className="my-letter-waiting-quote my-letter-waiting-quote--open" aria-hidden="true">“</span><blockquote>{letter.reply.content}</blockquote><span className="my-letter-waiting-quote my-letter-waiting-quote--close" aria-hidden="true">”</span><p>— {letter.reply.anonymousName || "이름 없는 편지"}</p></article></section></FocusShell>;
 }
 
 function getLettersForReading(userId: string) {
