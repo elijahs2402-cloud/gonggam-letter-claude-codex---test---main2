@@ -41,6 +41,8 @@
   --action-primary: var(--deep-plum);
   --action-primary-hover: #402a4d;
   --action-primary-active: #361f40;
+  --action-secondary-hover-bg: rgba(78, 52, 94, 0.08);
+  --action-secondary-active-bg: rgba(78, 52, 94, 0.14);
   --link: var(--plum);
 
   /* Status. The -text variants are darkened to clear 4.5:1 on paper; the plain
@@ -5460,6 +5462,47 @@ button:focus-visible {
   border-color: #cfc3b4;
   background: #d8cfc1;
   color: #f7f1e7;
+}
+
+/* Press and hover feedback for the buttons the app actually renders. The auth
+   flow uses .auth-primary/.auth-secondary, which had no states at all. Hover is
+   guarded so a tap on a touch device does not leave the state stuck. */
+@media (hover: hover) {
+  .auth-primary:hover:not(:disabled) {
+    border-color: var(--action-primary-hover);
+    background: var(--action-primary-hover);
+  }
+
+  .auth-secondary:hover:not(:disabled),
+  .flow-secondary-button:hover:not(:disabled) {
+    background: var(--action-secondary-hover-bg);
+  }
+
+  .flow-text-button:hover:not(:disabled) {
+    color: var(--action-primary-hover);
+  }
+}
+
+.auth-primary:active:not(:disabled) {
+  border-color: var(--action-primary-active);
+  background: var(--action-primary-active);
+}
+
+.flow-primary-button:active:not(:disabled),
+.emotion-primary-button:active:not(:disabled),
+.letter-flow-fixed-action .letter-button--primary:active:not(:disabled) {
+  background: var(--action-primary-active);
+}
+
+.auth-secondary:active:not(:disabled),
+.flow-secondary-button:active:not(:disabled) {
+  background: var(--action-secondary-active-bg);
+}
+
+.flow-text-button:disabled {
+  color: var(--disabled-text);
+  text-decoration: none;
+  cursor: not-allowed;
 }
 
 .flow-primary-button:disabled:hover {
