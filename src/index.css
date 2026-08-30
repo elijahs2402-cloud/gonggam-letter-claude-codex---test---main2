@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&display=swap");
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import 'tailwindcss';
 
 @font-face {
@@ -10,22 +11,113 @@
 }
 
 :root {
-  color: #292522;
-  background: #d8d0c3;
-  --active-navigation-icon-filter: invert(22%) sepia(15%) saturate(1761%) hue-rotate(232deg) brightness(91%) contrast(92%);
-  font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  color: var(--ink);
+  background: var(--bg-app);
+  font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+
+  /* Families. Serif carries brand, emotion and letter bodies; sans carries all UI
+     chrome; SUITE is reserved for the small brand mark. */
+  --font-serif: "Noto Serif KR", "Nanum Myeongjo", Batang, serif;
+  --font-sans: "Pretendard Variable", Pretendard, "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-brand: SUITE, "Pretendard Variable", Pretendard, sans-serif;
+
+  /* Surfaces */
+  --bg-app: #d8d0c3;
   --paper: #f5efe3;
+  --paper-light: #f6f0e5;
   --paper-deep: #eadfce;
+  --surface-card: #fffdf8;
+
+  /* Text. Ratios against --paper-light: 13.4 / 4.5 / 4.7. */
   --ink: #292522;
   --muted-ink: #766c61;
+  --faint-ink: #7a6853;
+
+  /* Action and brand */
   --plum: #73508d;
   --deep-plum: #4e345e;
+  --action-primary: var(--deep-plum);
+  --action-primary-hover: #402a4d;
+  --action-primary-active: #361f40;
+  --link: var(--plum);
+
+  /* Status. The -text variants are darkened to clear 4.5:1 on paper; the plain
+     names stay at their original value for borders, fills and illustration tints. */
   --sage: #698071;
-  --terracotta: #a8563d;
   --gold: #bc923e;
+  --terracotta: #a8563d;
+  --status-success-text: #52665a;
+  --status-caution-text: #7d6330;
+  --status-error-text: #a8563d;
+
+  /* Disabled */
+  --disabled-bg: #d8cfc1;
+  --disabled-text: #8d8378;
+  --disabled-border: rgba(78, 52, 94, 0.22);
+
+  /* Rules */
+  --rule-light: rgba(41, 37, 34, 0.12);
   --rule: rgba(41, 37, 34, 0.28);
+  --gold-rule-faint: rgba(188, 146, 62, 0.25);
+  --gold-rule-light: rgba(188, 146, 62, 0.32);
+  --gold-rule: rgba(188, 146, 62, 0.42);
+  --gold-rule-mid: rgba(188, 146, 62, 0.55);
+  --gold-rule-strong: rgba(188, 146, 62, 0.68);
+
+  --focus-ring: var(--gold);
+  --nav-inactive: #756a5f;
+  --active-navigation-icon-filter: invert(22%) sepia(15%) saturate(1761%) hue-rotate(232deg) brightness(91%) contrast(92%);
+
+  /* Type scale. 12px is the floor for any UI text, 13px for anything read as prose. */
+  --fs-tab: 12px;
+  --fs-status: 12px;
+  --fs-caption: 13px;
+  --fs-date: 13px;
+  --fs-body-sm: 14px;
+  --fs-body: 15px;
+  --fs-button: 15px;
+  --fs-letter: 16px;
+  --fs-section: 18px;
+  --fs-title: 26px;
+  --fs-display: 30px;
+
+  --lh-tight: 1.35;
+  --lh-snug: 1.5;
+  --lh-normal: 1.7;
+  --lh-relaxed: 1.75;
+  --lh-letter: 1.9;
+
+  /* Korean loses its shape below about -0.04em, so titles stop there. */
+  --ls-display: -0.035em;
+  --ls-title: -0.03em;
+  --ls-section: -0.025em;
+  --ls-body: -0.01em;
+
+  /* Spacing, 4px grid */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 28px;
+  --sp-8: 32px;
+  --gutter: 24px;
+  --section-gap: 28px;
+  --card-pad: 20px;
+  --row-min: 72px;
+  --tap-min: 44px;
+  --header-h: 62px;
+  --cta-h: 76px;
+  --nav-h: calc(70px + env(safe-area-inset-bottom));
+
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 400ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -53,7 +145,7 @@ body {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background-color: #d8d0c3;
+  background-color: var(--bg-app);
   -webkit-font-smoothing: antialiased;
 }
 
