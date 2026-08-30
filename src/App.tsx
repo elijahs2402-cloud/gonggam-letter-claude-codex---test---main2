@@ -80,7 +80,7 @@ import { getCurrentAppPath, getCurrentAppSearchParams, navigateTo, replaceRoute 
 import { MindContentBoard } from "./prototype-board/MindContentBoard";
 import { LetterSafetyReviewScreen, UrgentSupportScreen } from "./SafetyScreens";
 import { LetterReportCompleteDemoScreen, LetterReportFigmaScreen, LetterReportScreen, SafetyManagementScreen } from "./ReportScreens";
-import { AnonymousNameScreen, AuthGateRedirect, DirectNicknameScreen, DormantAccountScreen, LoginScreen, OnboardingRedesignScreen, OnboardingScreen, TermsConsentScreen, getRequiredOnboardingPath } from "./AuthScreens";
+import { AnonymousNameScreen, AuthGateRedirect, DirectNicknameScreen, DormantAccountScreen, LoginScreen, OnboardingRedesignScreen, TermsConsentScreen, getRequiredOnboardingPath } from "./AuthScreens";
 import { GratitudeScreen } from "./GratitudeScreen";
 import { getMockAuthSnapshot, isMockAuthenticated, setPostLoginPath } from "./mockAuth";
 import { NotificationsScreen, NotificationSettingsScreen } from "./NotificationScreens";
@@ -383,8 +383,9 @@ export function App() {
   // Intro was formerly the fallback route; retain both direct and root entry.
   if (path === "/" || path === "/intro") return <IntroScreen />;
 
-  if (path === "/onboarding") return <OnboardingScreen />;
-  if (path === "/onboarding-new") return <OnboardingRedesignScreen />;
+  if (path === "/onboarding") return <OnboardingRedesignScreen />;
+  // The redesign became the onboarding screen; its former address still resolves.
+  if (path === "/onboarding-new") return <AuthGateRedirect to="/onboarding" />;
   if (path === "/dormant-account") return <DormantAccountScreen />;
   if (path === "/login") {
     if (isMockAuthenticated()) return <AuthGateRedirect to="/home" />;
