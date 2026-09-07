@@ -92,7 +92,8 @@ export function LoginScreen() {
     const timer = window.setTimeout(() => {
       const result = resolveMockLogin();
       setSnapshot(result);
-      if (result.state === "logged_in" || result.state === "new_user") replaceRoute("/terms-consent");
+      if (result.state === "logged_in") replaceRoute("/returning-welcome");
+      else if (result.state === "new_user") replaceRoute("/terms-consent");
     }, 760);
     return () => window.clearTimeout(timer);
   }, [loggingIn]);
@@ -235,6 +236,27 @@ export function DirectNicknameScreen() {
     </div>
     <footer className="auth-actions direct-nickname-actions"><button className="auth-primary" type="button" disabled={!validName || isCompleting} onClick={continueWithName}>이 이름으로 시작하기</button></footer>
     {isCompleting && <div className={`anonymous-name-welcome${isWelcomeVisible ? " is-visible" : ""}${isWelcomeLeaving ? " is-leaving" : ""}`} role="status" aria-live="polite"><p><strong>{welcomeName}</strong>님, 반가워요.</p></div>}
+  </AuthShell>;
+}
+
+export function ReturningWelcomeScreen() {
+  const name = getMockAuthSnapshot().account?.anonymousName ?? "조용한 별빛";
+  const [visible, setVisible] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+
+  useEffect(() => {
+    const revealTimer = window.setTimeout(() => setVisible(true), 90);
+    const leaveTimer = window.setTimeout(() => setLeaving(true), 2510);
+    const finishTimer = window.setTimeout(() => navigateTo(getPostLoginPath("/home")), 3230);
+    return () => {
+      window.clearTimeout(revealTimer);
+      window.clearTimeout(leaveTimer);
+      window.clearTimeout(finishTimer);
+    };
+  }, []);
+
+  return <AuthShell className="anonymous-name-screen motion-preview is-completing returning-welcome-screen">
+    <div className={`anonymous-name-welcome${visible ? " is-visible" : ""}${leaving ? " is-leaving" : ""}`} role="status" aria-live="polite"><p><strong>{name}</strong>님, 반가워요.</p></div>
   </AuthShell>;
 }
 

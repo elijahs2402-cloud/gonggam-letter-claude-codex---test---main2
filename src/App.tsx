@@ -80,7 +80,7 @@ import { LetterSafetyReviewScreen, UrgentSupportScreen } from "./SafetyScreens";
 import { LetterReportCompleteDemoScreen, LetterReportFigmaScreen, LetterReportScreen, SafetyManagementScreen } from "./ReportScreens";
 import { HomeSceneScreen } from "./HomeSceneScreen";
 import { HomeCardsScreen } from "./HomeCardsScreen";
-import { AuthGateRedirect, DirectNicknameScreen, DormantAccountScreen, LoginScreen, OnboardingRedesignScreen, TermsConsentScreen, getRequiredOnboardingPath } from "./AuthScreens";
+import { AuthGateRedirect, DirectNicknameScreen, DormantAccountScreen, LoginScreen, OnboardingRedesignScreen, ReturningWelcomeScreen, TermsConsentScreen, getRequiredOnboardingPath } from "./AuthScreens";
 import { GratitudeScreen } from "./GratitudeScreen";
 import { HomeRuledScreen } from "./HomeRuledScreen";
 import { getMockAuthSnapshot, isMockAuthenticated, setPostLoginPath } from "./mockAuth";
@@ -407,6 +407,10 @@ export function App() {
   if (path === "/login") {
     if (isMockAuthenticated()) return <AuthGateRedirect to="/home" />;
     return <LoginScreen />;
+  }
+  if (path === "/returning-welcome") {
+    if (!isMockAuthenticated()) return <AuthGateRedirect to={getRequiredOnboardingPath() ?? "/login"} />;
+    return <ReturningWelcomeScreen />;
   }
   if (path === "/terms-consent") {
     const next = getRequiredOnboardingPath();

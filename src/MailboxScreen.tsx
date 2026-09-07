@@ -180,7 +180,7 @@ function getDirectionMark(status: Exclude<MailboxFilter, "all">) {
 // 필터와 무관하게 같은 빈 상태를 보여준다. 상태별로 문구와 버튼이 달라지면
 // 같은 화면이 두 가지 얼굴을 갖게 되고, 필터를 옮길 때마다 나가는 길이 사라진다.
 function UnifiedMailboxEmpty() {
-  return <section className="mailbox-letter-empty mailbox-letter-empty--unified"><p>아직 편지가 없어요.</p><span>새로운 마음이 오면<br />이곳에 차분히 기록할게요.</span><button type="button" onClick={() => navigateTo("/write-letter")}>편지 쓰기</button></section>;
+  return <section className="mailbox-letter-empty mailbox-letter-empty--unified"><p>아직 편지가 없어요</p><span>새로운 마음이 오면<br />이곳에 차분히 기록할게요.</span><button type="button" onClick={() => navigateTo("/write-letter")}>편지 쓰기</button></section>;
 }
 
 function MailboxEmpty({ mode }: { mode: "mine" | "replied" }) { const mine = mode === "mine"; return <section className="mailbox-letter-empty"><p>{mine ? "아직 보낸 편지가 없어요." : "아직 답장을 전한 편지가 없어요."}</p><span>{mine ? "마음을 남기면 한 사람이 읽고 답장을 전해요." : "기다리는 마음을 만나 천천히 답장을 전해보세요."}</span><button type="button" onClick={() => navigateTo(mine ? "/write-letter" : getListenEntryPath(getCurrentUserId()))}>{mine ? "편지 쓰기" : "기다리는 편지 보기"}</button></section>; }

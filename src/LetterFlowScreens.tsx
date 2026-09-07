@@ -225,6 +225,8 @@ export function ReadLetterFlowScreen({ letterId, assignedReaderMode = false }: {
   if (letterId?.startsWith("waiting-inline-test-")) ensureWaitingListTestLetters(getCurrentUserId());
   if (letterId?.startsWith("sample-waiting-letter-")) seedSampleLetters();
   const letter = letterId ? getLetterById(letterId) : undefined;
+  const isBlockedContentPreview = getCurrentAppSearchParams().get("preview") === "blocked-content";
+  if (isBlockedContentPreview) return <FocusShell title="편지 읽기" fallback="/home" hideBack><section className="flow-message"><h1>차단한 사용자의 콘텐츠예요</h1><p>안전을 위해 이 내용은 기본적으로 숨겨져 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/safety-management")}>차단 내역 확인</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></FocusShell>;
   if (!letter) return <MissingLetterScreen fallback="/home" />;
   if (assignedReaderMode && (letter.assignedReaderId !== getCurrentUserId() || !["assigned", "read", "waiting_for_reply"].includes(letter.status) || getLetterReturn(letter.id, getCurrentUserId()))) return <MissingLetterScreen fallback="/home" />;
   if (letter.senderId === getCurrentUserId()) return <MissingLetterScreen fallback="/home" />;
@@ -234,7 +236,7 @@ export function ReadLetterFlowScreen({ letterId, assignedReaderMode = false }: {
   if (letter.status === "withdrawn") return <FocusShell title="편지 읽기" fallback="/home"><section className="flow-message"><h1>편지의 주인이<br />편지를 거두었어요</h1><p>더 이상 이 편지를 읽거나 답장을 쓸 수 없어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(getListenEntryPath(getCurrentUserId()))}>다른 편지 만나기</button></section></FocusShell>;
   if (["high_risk", "needs_revision", "under_review", "blocked"].includes(letter.safetyStatus ?? "clear") || ["pending", "reviewing", "rejected"].includes(letter.moderationStatus ?? "not_required")) return <FocusShell title="편지 읽기" fallback="/home"><section className="flow-message"><h1>현재 이 편지를<br />열 수 없어요</h1><p>안전을 위해 이 편지의 내용을 확인할 수 없어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(getListenEntryPath(getCurrentUserId()))}>다른 편지 만나기</button></section></FocusShell>;
   if (getLetterReturn(letter.id, getCurrentUserId())) return <FocusShell title="편지 읽기" fallback="/home"><section className="flow-message"><h1>{RETURNED_LETTER_TITLE}</h1><p>{RETURNED_LETTER_BODY}</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(getListenEntryPath(getCurrentUserId()))}>다른 편지 만나기</button></section></FocusShell>;
-  if (isUserBlocked(getCurrentUserId(), letter.senderId)) return <FocusShell title="편지 읽기" fallback="/home"><section className="flow-message"><h1>차단한 사용자의 콘텐츠예요</h1><p>안전을 위해 이 내용은 기본적으로 숨겨져 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(getListenEntryPath(getCurrentUserId()))}>다른 편지 만나기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/safety-management")}>안전 관리에서 확인</button></section></FocusShell>;
+  if (isUserBlocked(getCurrentUserId(), letter.senderId)) return <FocusShell title="편지 읽기" fallback="/home" hideBack><section className="flow-message"><h1>차단한 사용자의 콘텐츠예요</h1><p>안전을 위해 이 내용은 기본적으로 숨겨져 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/safety-management")}>차단 내역 확인</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></FocusShell>;
   if (letter.assignedReaderId && letter.assignedReaderId !== getCurrentUserId()) return <FocusShell title="편지 읽기" fallback="/home"><section className="flow-message"><h1>이 편지는 다른 사람이<br />먼저 맡았어요</h1><p>다른 기다리는 마음을 만나볼 수 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(getListenEntryPath(getCurrentUserId()))}>다른 편지 만나기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></FocusShell>;
   const alreadyAssignedToCurrentUser = letter.assignedReaderId === getCurrentUserId();
   const continueTo = (destination: "reply" | "return") => {
@@ -500,13 +502,15 @@ export function ReplyReviewScreen({ letterId }: { letterId?: string }) {
 
 export function ReplySentScreen({ letterId }: { letterId?: string }) {
   const letter = letterId ? getLetterById(letterId) : undefined;
-  if (!letter?.reply) return <MissingLetterScreen fallback="/mailbox" />;
-  return <FocusShell title="답장 완료" fallback="/home"><section className="flow-complete"><img src="/assets/reply-sent-lavender-envelope.png" alt="봉인된 편지 봉투" /><h1>따뜻한 마음을 전했어요</h1><p>당신의 한 통이 그 사람의 편지함에 도착할 거예요.</p><div><button className="flow-primary-button" type="button" onClick={() => navigateTo("/mailbox")}>편지함 가기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로</button></div></section></FocusShell>;
+  const isCompletionPreview = getCurrentAppSearchParams().get("preview") === "complete";
+  if (!letter?.reply && !isCompletionPreview) return <MissingLetterScreen fallback="/mailbox" />;
+  return <FocusShell title="답장 완료" fallback="/home" hideBack><section className="flow-complete"><img src="/assets/reply-sent-lavender-envelope.png" alt="봉인된 편지 봉투" /><h1>따뜻한 마음을 전했어요</h1><p>당신의 한 통이 그 사람의 편지함에<br />도착할거예요.</p><div><button className="flow-primary-button" type="button" onClick={() => navigateTo("/mailbox")}>편지함 가기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></div></section></FocusShell>;
 }
 
 export function ReplySendingTransitionScreen({ letterId }: { letterId?: string }) {
   const currentUserId = getCurrentUserId();
-  const forcedTestLetter = letterId?.startsWith("waiting-inline-test-") ? forceReplyTestAssignment(letterId, currentUserId) : undefined;
+  const isLoadingPreview = getCurrentAppSearchParams().get("preview") === "loading";
+  const forcedTestLetter = !isLoadingPreview && letterId?.startsWith("waiting-inline-test-") ? forceReplyTestAssignment(letterId, currentUserId) : undefined;
   if (forcedTestLetter) ensureForcedReplyTestDraft(forcedTestLetter.id, currentUserId);
   /* 보내는 중과 실패는 성격이 다른 화면이라 나눠 둔다.
      예전에는 로딩 화면의 문구만 갈아끼웠는데, 그러면 점 물결은 계속 돌아
@@ -517,7 +521,7 @@ export function ReplySendingTransitionScreen({ letterId }: { letterId?: string }
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!letterId) return;
+    if (!letterId || isLoadingPreview) return;
     const timer = window.setTimeout(() => {
       const letter = getLetterById(letterId);
       const draft = getReplyDraft(letterId, currentUserId);
@@ -537,14 +541,14 @@ export function ReplySendingTransitionScreen({ letterId }: { letterId?: string }
       // 두 번 완성되는 길이라 애니메이션이 잘리지 않는다.
     }, 1700);
     return () => window.clearTimeout(timer);
-  }, [currentUserId, letterId, attempt]);
+  }, [currentUserId, isLoadingPreview, letterId, attempt]);
 
   const retry = () => { setPhase("sending"); setAttempt((value) => value + 1); };
 
   return <main className="mobile-prototype listen-entry-screen reply-sending-transition">{/* 뒤로가기는 쓰던 답장으로 돌아간다. 예전에는 편지 id 없이 "/write-reply" 였는데,
         그 경로는 시안 확인용 표본 편지를 띄우는 자리라 내가 쓰던 답장이 아니라
         엉뚱한 편지가 열렸다. id 가 없는 경우에만 편지함으로 보낸다. */}
-    <header className="flow-header listen-entry-topbar"><button type="button" onClick={() => navigateBack(letterId ? `/write-reply/${encodeURIComponent(letterId)}` : "/mailbox")} aria-label="이전으로 돌아가기"><span aria-hidden="true">←</span></button><strong>답장 보내기</strong><span aria-hidden="true" /></header><div className="listen-entry-scroll">{phase === "failed"
+    <header className="flow-header listen-entry-topbar">{phase === "sending" ? <span aria-hidden="true" /> : <button type="button" onClick={() => navigateBack(letterId ? `/write-reply/${encodeURIComponent(letterId)}` : "/mailbox")} aria-label="이전으로 돌아가기"><span aria-hidden="true">←</span></button>}<strong>답장 보내기</strong><span aria-hidden="true" /></header><div className="listen-entry-scroll">{phase === "failed"
     ? <section className="flow-message" role="alert"><h1>답장을 보내지 못했어요</h1><p>잠시 후 다시 시도해주세요.</p><button className="flow-primary-button" type="button" onClick={retry}>다시 보내기</button></section>
     : <ListenEntryLoadingState message="답장을 보내고 있어요" />}</div></main>;
 }

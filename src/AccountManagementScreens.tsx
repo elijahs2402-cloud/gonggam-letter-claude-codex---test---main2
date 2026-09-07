@@ -61,7 +61,7 @@ export function AccountSettingsScreen({ stageClassName = "" }: { stageClassName?
         </button>
       </section>
     </div>
-    {confirmLogout && <Dialog title="로그아웃할까요?" description="다음에 로그인하면 이 기기의 편지와 간직한 문구를 계속 확인할 수 있어요." primary="로그아웃" onPrimary={logout} secondary="계속 이용하기" onSecondary={() => setConfirmLogout(false)} />}
+    {confirmLogout && <Dialog title="로그아웃할까요?" description="다음에 로그인해도, 남겨둔 편지를 다시 확인할 수 있어요." primary="로그아웃" onPrimary={logout} secondary="계속 이용하기" onSecondary={() => setConfirmLogout(false)} />}
   </main>;
 }
 
@@ -82,7 +82,7 @@ export function AccountWithdrawalScreen() {
   // '편지를 조심스럽게 가져오고 있어요' 로딩 화면과 같은 틀을 쓴다.
   // 앱에 로딩 표현이 둘로 갈려 있었다 — 이쪽은 점 애니메이션 없이 글자만 있었다.
   // 껍데기·스크롤·로딩 컴포넌트를 그대로 재사용하므로 새 CSS 는 없다.
-  if (step === "processing") return <main className="mobile-prototype listen-entry-screen is-loading"><header className="flow-header listen-entry-topbar"><button type="button" onClick={() => navigateBack("/account-settings")} aria-label="이전으로 돌아가기"><span aria-hidden="true">←</span></button><strong>계정 삭제</strong><span aria-hidden="true" /></header><div className="listen-entry-scroll"><ListenEntryLoadingState message="계정을 삭제하고 있어요" /></div></main>;
+  if (step === "processing") return <main className="mobile-prototype listen-entry-screen is-loading"><header className="flow-header listen-entry-topbar"><span aria-hidden="true" /><strong>계정 삭제</strong><span aria-hidden="true" /></header><div className="listen-entry-scroll"><ListenEntryLoadingState message="계정을 삭제하고 있어요" /></div></main>;
 
   if (step === "reason") return <main key="withdrawal-reason" className={`mobile-prototype account-settings-screen account-withdrawal-screen account-withdrawal-stage account-withdrawal-stage--${transitionDirection}`}>
     <Header title="계정 삭제" fallback="/account-settings" />

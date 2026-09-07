@@ -13,6 +13,9 @@ export function installViewportHeightSync() {
 
   const root = document.documentElement;
   let frame = 0;
+  // iOS 홈 화면 앱은 키보드가 떠도 layout viewport까지 함께 줄어드는 경우가 있다.
+  // 그때 rawInset은 0이지만 visual viewport는 키보드 높이만큼 크게 작아진다.
+  let largestViewportHeight = 0;
 
   const apply = () => {
     frame = 0;
@@ -21,6 +24,7 @@ export function installViewportHeightSync() {
     // 위로 밀어 올린다(offsetTop). 그래서 '화면 바닥에서 키보드 윗면까지의
     // 거리'를 따로 계산해야 하단 바를 정확히 키보드 위에 세울 수 있다.
     const layoutHeight = document.documentElement.clientHeight;
+    largestViewportHeight = Math.max(largestViewportHeight, Math.round(viewport.height));
     const rawInset = Math.round(layoutHeight - (viewport.height + viewport.offsetTop));
     // 주소창이 접히는 순간 1px 안팎의 오차가 생겨 바가 미세하게 떨린다.
     const inset = rawInset > 2 ? rawInset : 0;
@@ -54,7 +58,11 @@ export function installViewportHeightSync() {
     // 아래에 비워둔 안전영역(홈 인디케이터 자리)가 필요 없어진다.
     // CSS 는 길이 변수의 0 여부로 규칙을 갈라 쓸 수 없어,
     // 상태를 속성으로 내려 준다. index.css 의 [data-keyboard="open"] 규칙이 받는다.
-    if (inset > 0) root.dataset.keyboard = "open";
+    // 주소창 변화는 수십 px 수준이지만 키보드는 150px 이상을 차지한다.
+    // inset이 0이어도 이 차이를 이용하면 standalone 모드에서도 버튼 바의
+    // 키보드 전용 여백 축소 규칙을 정확히 적용할 수 있다.
+    const keyboardVisible = inset > 0 || largestViewportHeight - Math.round(viewport.height) > 150;
+    if (keyboardVisible) root.dataset.keyboard = "open";
     else delete root.dataset.keyboard;
   };
   // 키보드 전환 중에는 resize 가 연달아 오므로 프레임당 한 번만 반영한다.
@@ -66,13 +74,17 @@ export function installViewportHeightSync() {
   apply();
   viewport.addEventListener("resize", schedule);
   viewport.addEventListener("scroll", schedule);
-  window.addEventListener("orientationchange", schedule);
+  const handleOrientationChange = () => {
+    largestViewportHeight = 0;
+    schedule();
+  };
+  window.addEventListener("orientationchange", handleOrientationChange);
 
   return () => {
     if (frame) window.cancelAnimationFrame(frame);
     viewport.removeEventListener("resize", schedule);
     viewport.removeEventListener("scroll", schedule);
-    window.removeEventListener("orientationchange", schedule);
+    window.removeEventListener("orientationchange", handleOrientationChange);
     root.style.removeProperty("--app-viewport-height");
     root.style.removeProperty("--app-keyboard-inset");
     root.style.removeProperty("--app-standalone-fill");

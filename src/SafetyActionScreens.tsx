@@ -10,7 +10,7 @@ import { getListenEntryPath } from "./waitingLetters";
 import { ListenEntryLoadingState } from "./ListenEntryVariants";
 
 // action 은 스크롤 밖 하단 고정 바다. 편지 신고 최종본(ReportScreens.tsx)의 Shell 과 같은 형태로 맞췄다.
-function Shell({ title, children, fallback, action }: { title: string; children: React.ReactNode; fallback: string; action?: React.ReactNode }) { return <main className="mobile-prototype letter-flow-screen"><header className="flow-header"><button type="button" onClick={() => navigateBack(fallback)} aria-label="이전으로 돌아가기">←</button><strong>{title}</strong><span /></header><div className="letter-flow-scroll">{children}</div>{action}</main>; }
+function Shell({ title, children, fallback, action, showBackButton = true }: { title: string; children: React.ReactNode; fallback: string; action?: React.ReactNode; showBackButton?: boolean }) { return <main className="mobile-prototype letter-flow-screen"><header className="flow-header">{showBackButton ? <button type="button" onClick={() => navigateBack(fallback)} aria-label="이전으로 돌아가기">←</button> : <span aria-hidden="true" />}<strong>{title}</strong><span /></header><div className="letter-flow-scroll">{children}</div>{action}</main>; }
 const reportReasons: ReadonlyArray<[ReportReason, string]> = [["abusive", "모욕적이거나 공격적인 표현"], ["sexual", "성적이거나 불쾌한 내용"], ["personal_information", "개인정보 또는 연락처 포함"], ["spam", "광고 또는 반복적인 홍보"], ["dangerous_or_illegal", "위험하거나 불법적인 내용"], ["self_harm_encouragement", "자해·타해를 부추기는 내용"], ["other", "기타"]];
 
 export function ReplyReportScreen({ letterId, complete = false }: { letterId?: string; complete?: boolean }) {
@@ -52,7 +52,10 @@ export function LetterReturnScreen({ letterId }: { letterId?: string }) {
   // 편지 읽기 화면의 시트에서 이미 확인을 받고 왔다면(?start=1) 곧장 처리부터 시작한다.
   // 주소로 직접 들어온 경우에는 확인 시트부터 보여준다.
   const startNow = getCurrentAppSearchParams().get("start") === "1";
-  const [phase, setPhase] = useState<"intro" | "processing" | "failed" | "complete">(startNow ? "processing" : "intro");
+  // preview=loading 은 화면 검수용이다. 실제 편지 상태·초안·반환 기록은 바꾸지 않는다.
+  const isLoadingPreview = getCurrentAppSearchParams().get("preview") === "loading";
+  const isCompletePreview = getCurrentAppSearchParams().get("preview") === "complete";
+  const [phase, setPhase] = useState<"intro" | "processing" | "failed" | "complete">(isCompletePreview ? "complete" : startNow || isLoadingPreview ? "processing" : "intro");
   // 처리는 훅 규칙 때문에 가드보다 위에 정의해 둔다 — 아래 가드들이 먼저 return 해버리면
   // useEffect 가 조건부로 호출되어 버린다.
   const runReturn = () => {
@@ -73,16 +76,16 @@ export function LetterReturnScreen({ letterId }: { letterId?: string }) {
   // 이미 두고 온 편지를 다시 두려다 실패해 '이미 두고 온 편지예요'가 떴다.
   // 한 번만 돌게 문을 걸어둔다.
   const startedRef = useRef(false);
-  useEffect(() => { if (!startNow || startedRef.current) return; startedRef.current = true; runReturn(); }, []);
+  useEffect(() => { if (!startNow || isLoadingPreview || isCompletePreview || startedRef.current) return; startedRef.current = true; runReturn(); }, []);
   // 이 분기는 반드시 아래 가드보다 위에 있어야 한다.
   // runReturn 이 saveLetterReturn 까지 마치면 getLetterReturn 이 기록을 돌려주어
   // 가드가 먼저 걸리고, 완료 화면은 한 번도 보이지 않았다('이미 두고 온 편지예요'가 대신 떴다).
-  if (phase === "complete") return <Shell title="편지 두고 가기" fallback="/home"><section className="flow-message"><h1>편지를 다시 놓아두었어요</h1><p>다른 누군가가 이 마음을 만나게 될 거예요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(getListenEntryPath(getCurrentUserId()))}>다른 편지 만나기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></Shell>;
+  if (phase === "complete") return <Shell title="편지 두고 가기" fallback="/home" showBackButton={false}><section className="flow-message"><h1>편지를 다시 놓아두었어요</h1><p>다른 누군가가 이 마음을 만나게 될 거예요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(getListenEntryPath(getCurrentUserId()))}>다른 편지 만나기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></Shell>;
   // 완료 직전의 사이 화면.
   // 앱의 표준 로딩 표현(편지 만나기에서 쓰던 것)을 그대로 빌려 둘이 같은 모양으로 읽힌다.
   // 직접 짜지 않는 이유: 점은 .listen-entry-loading-mark 안에서만 8px 로 커지고
   // 그 밖에서는 버튼 속 크기 그대로라 전체 화면에서 너무 작게 나온다.
-  if (phase === "processing") return <Shell title="편지 두고 가기" fallback="/home"><ListenEntryLoadingState message="편지를 제자리에 두고 있어요" /></Shell>;
+  if (phase === "processing") return <Shell title="편지 두고 가기" fallback="/home" showBackButton={false}><ListenEntryLoadingState message="편지를 제자리에 두고 있어요" /></Shell>;
   if (!letter || letter.assignedReaderId !== readerId || !["assigned", "read", "waiting_for_reply"].includes(letter.status) || getLetterReturn(letter.id, readerId)) return <Shell title="편지 두고 가기" fallback="/home"><section className="flow-message"><h1>{RETURNED_LETTER_TITLE}</h1><p>{RETURNED_LETTER_BODY}</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(getListenEntryPath(getCurrentUserId()))}>다른 편지 만나기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></Shell>;
   if (phase === "failed") return <Shell title="편지 두고 가기" fallback={`/write-reply/${letter.id}`}><section className="flow-message"><h1>편지를 두고 오지 못했어요</h1><p>잠시 후 다시 시도해주세요.</p><button className="flow-primary-button" type="button" onClick={runReturn}>다시 시도</button><button className="flow-secondary-button" type="button" onClick={() => navigateTo(`/write-reply/${letter.id}`)}>답장으로 돌아가기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 이동</button></section></Shell>;
   return <LetterReturnSheet hasDraft={hasDraft} onCancel={() => navigateTo(`/write-reply/${letter.id}`)} onConfirm={runReturn} />;

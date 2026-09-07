@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { blockUser, getBlockedUsers, unblockUser } from "./blocks";
 import { hideContent } from "./contentVisibility";
-import { getCurrentUserId, getLetterById } from "./letters";
-import { createReport, getReportForTarget, getReportsByUser, type ReportReason } from "./reports";
+import { getCurrentUserId, getLetterById, getLetters } from "./letters";
+import { createReport, getReportForTarget, getReportsByUser, type Report, type ReportReason } from "./reports";
 import { navigateBack, navigateTo } from "./navigation";
 import { formatDate } from "./datetime";
 import { getListenEntryPath } from "./waitingLetters";
 
 const reasons: ReadonlyArray<[ReportReason, string]> = [["abusive", "모욕적이거나 공격적인 표현"], ["sexual", "성적이거나 불쾌한 내용"], ["personal_information", "개인정보 또는 연락처 포함"], ["spam", "광고 또는 반복적인 홍보"], ["dangerous_or_illegal", "위험하거나 불법적인 내용"], ["self_harm_encouragement", "자해·타해를 부추기는 내용"], ["other", "기타"]];
-function Shell({ title, children, fallback = "/home", action, screenClassName = "" }: { title: string; children: React.ReactNode; fallback?: string; action?: React.ReactNode; screenClassName?: string }) { return <main className={`mobile-prototype letter-flow-screen ${screenClassName}`}><header className="flow-header"><button type="button" onClick={() => navigateBack(fallback)} aria-label="이전으로 돌아가기">←</button><strong>{title}</strong><span /></header><div className="letter-flow-scroll">{children}</div>{action}</main>; }
+function Shell({ title, children, fallback = "/home", action, screenClassName = "", showBackButton = true }: { title: string; children: React.ReactNode; fallback?: string; action?: React.ReactNode; screenClassName?: string; showBackButton?: boolean }) { return <main className={`mobile-prototype letter-flow-screen ${screenClassName}`}><header className="flow-header">{showBackButton ? <button type="button" onClick={() => navigateBack(fallback)} aria-label="이전으로 돌아가기">←</button> : <span aria-hidden="true" />}<strong>{title}</strong><span /></header><div className="letter-flow-scroll">{children}</div>{action}</main>; }
 
 export function LetterReportScreen({ letterId }: { letterId?: string }) {
   const userId = getCurrentUserId(); const letter = letterId ? getLetterById(letterId) : undefined; const existing = letter ? getReportForTarget(userId, "letter", letter.id) : undefined;
@@ -31,12 +31,30 @@ export function LetterReportFigmaScreen({ letterId }: { letterId?: string }) {
 }
 
 export function LetterReportCompleteDemoScreen() {
-  return <Shell title="신고 접수"><section className="flow-message"><h1>신고를 받았어요</h1><p>이 편지는 내 대기 목록에서 숨겨졌어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></Shell>;
+  return <Shell title="신고 접수" showBackButton={false}><section className="flow-message"><h1>신고가 접수되었어요</h1><p>이 편지는 대기 목록에서 숨겨졌어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/safety-management")}>신고 내역 확인</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></Shell>;
 }
 
 const reasonLabels: Record<string, string> = { abusive: "모욕적 표현", sexual: "불쾌한 내용", personal_information: "개인정보", spam: "광고", dangerous_or_illegal: "위험하거나 불법적인 내용", self_harm_encouragement: "위험 조장", irrelevant_or_insincere: "성의 없는 답장", other: "기타" };
 
 const managementDate = (value: string) => formatDate(value);
+
+const nicknameOrFallback = (nickname?: string) => nickname?.trim() || "이름을 확인할 수 없는 사용자";
+
+function reportedNickname(report: Report) {
+  if (report.targetType === "letter") return nicknameOrFallback(getLetterById(report.targetId)?.anonymousName);
+  if (report.targetType === "reply") {
+    const letter = getLetters(true).find((candidate) => candidate.reply?.id === report.targetId);
+    return nicknameOrFallback(letter?.reply?.anonymousName);
+  }
+  return nicknameOrFallback();
+}
+
+function blockedNickname(blockedUserId: string, reports: Report[]) {
+  const report = reports.find((item) => item.blockedUserId === blockedUserId);
+  if (report) return reportedNickname(report);
+  const letter = getLetters(true).find((candidate) => candidate.senderId === blockedUserId);
+  return nicknameOrFallback(letter?.anonymousName);
+}
 
 // 차단 목록은 익명이라 항목이 전부 "익명의 사용자"로 똑같아 보인다.
 // 어떤 경위로 차단했는지를 함께 보여 줘야 서로 구분된다.
@@ -79,7 +97,7 @@ export function SafetyManagementScreen({ stageClassName = "" }: { stageClassName
         </header>
         {blocks.length ? <ul className="management-record-list">
           {blocks.map((item) => <li key={item.id}>
-            <span className="management-record-copy"><strong>익명의 사용자</strong><small>{blockSource(item.source)} <i /> {managementDate(item.createdAt)}</small></span>
+            <span className="management-record-copy"><strong>{blockedNickname(item.blockedUserId, reports)}</strong><small>{blockSource(item.source)} <i /> {managementDate(item.createdAt)}</small></span>
             <button type="button" onClick={() => setConfirm(item.blockedUserId)}>차단 해제</button>
           </li>)}
         </ul> : <p className="management-empty">차단한 사용자가 없어요.</p>}
@@ -92,7 +110,7 @@ export function SafetyManagementScreen({ stageClassName = "" }: { stageClassName
         </header>
         {reports.length ? <ul className="management-record-list management-report-list">
           {reports.map((item) => <li key={item.id}>
-            <span className="management-record-copy"><strong>{item.targetType === "reply" ? "받은 답장" : "다른 사람의 편지"}</strong><small>{reasonLabels[item.reason] ?? "기타"} <i /> {managementDate(item.createdAt)}</small></span>
+            <span className="management-record-copy"><strong>{reportedNickname(item)}</strong><small>{reasonLabels[item.reason] ?? "기타"} <i /> {managementDate(item.createdAt)}</small></span>
             <em className={reportStatusTone(item.status)}>{reportStatus(item.status)}</em>
           </li>)}
         </ul> : <p className="management-empty">신고 내역이 없어요.</p>}
