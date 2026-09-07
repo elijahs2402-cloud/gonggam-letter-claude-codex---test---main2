@@ -1,5 +1,9 @@
-.screen {
-  background: #f8f4e8 url("/assets/home-cards-room-02.jpg") left 50% bottom calc(var(--nav-h) + 49px - min(41.54vw, 162px)) / 100% auto no-repeat;
+.screen.screen {
+  background-color: #f8f4e8;
+  background-image: url("/assets/home-cards-room-02.jpg") !important;
+  background-position: left 50% bottom calc(var(--nav-h) + 49px - min(41.54vw, 162px));
+  background-repeat: no-repeat;
+  background-size: 100% auto !important;
 }
 
 .scroll {
@@ -95,7 +99,7 @@
 .scrollFooter { display: none; }
 
 @media (max-width: 390px) and (max-height: 700px) {
-  .screen { background-color: #faf5e9; background-image: none; }
+  .screen.screen { background-color: #faf5e9; background-image: none !important; }
   .scroll {
     flex: 1 1 0;
     height: 0;
