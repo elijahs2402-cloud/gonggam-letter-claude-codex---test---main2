@@ -80,6 +80,7 @@ export function OnboardingRedesignScreen() {
 }
 
 const providerLabels: Record<MockAuthProvider, string> = { apple: "Apple로 계속하기", google: "Google로 계속하기", kakao: "토스로 계속하기" };
+const loginProviderOrder: MockAuthProvider[] = ["kakao", "google", "apple"];
 
 export function LoginScreen() {
   const [snapshot, setSnapshot] = useState(getMockAuthSnapshot);
@@ -131,7 +132,7 @@ export function LoginScreen() {
       </section>}
 
       <section className="auth-provider-list" aria-label="로그인 방법">
-        {(Object.keys(providerLabels) as MockAuthProvider[]).map((provider) => <button
+        {loginProviderOrder.map((provider) => <button
           key={provider}
           className="auth-provider-button"
           type="button"
