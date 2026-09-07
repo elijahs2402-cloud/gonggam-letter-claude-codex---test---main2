@@ -8547,7 +8547,7 @@ html[data-ios-standalone="true"] .intro-copy {
 
 /* ③ 선택을 돕는 문장은 캡션이 아니라 본문 */
 .home-screen .home-choice-copy span {
-  font-size: var(--fs-body-sm);
+  font-size: 13px;
   line-height: var(--lh-snug);
 }
 
