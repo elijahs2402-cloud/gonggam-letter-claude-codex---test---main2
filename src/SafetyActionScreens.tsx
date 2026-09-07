@@ -1,37 +1,89 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { blockUser } from "./blocks";
-import { hideContent } from "./contentVisibility";
 import { deleteReplyDraft, getReplyDraft } from "./letterDraft";
 import { getCurrentUserId, getLetterById, returnLetterToWaiting } from "./letters";
-import { type LetterReturnReason, getLetterReturn, saveLetterReturn } from "./letterReturns";
-import { navigateBack, navigateTo } from "./navigation";
+import { getLetterReturn, saveLetterReturn } from "./letterReturns";
+import { getCurrentAppSearchParams, navigateBack, navigateTo } from "./navigation";
 import { createReport, getReportForTarget, type ReportReason } from "./reports";
+import { RETURNED_LETTER_BODY, RETURNED_LETTER_TITLE } from "./copy";
+import { getListenEntryPath } from "./waitingLetters";
+import { ListenEntryLoadingState } from "./ListenEntryVariants";
 
-function Shell({ title, children, fallback }: { title: string; children: React.ReactNode; fallback: string }) { return <main className="mobile-prototype letter-flow-screen"><header className="flow-header"><button type="button" onClick={() => navigateBack(fallback)} aria-label="이전으로 돌아가기">←</button><strong>{title}</strong><span /></header><div className="letter-flow-scroll">{children}</div></main>; }
-const reportReasons: ReadonlyArray<[ReportReason, string]> = [["abusive", "모욕적이거나 공격적인 표현"], ["sexual", "성적이거나 불쾌한 내용"], ["personal_information", "개인정보 또는 연락처 포함"], ["spam", "광고 또는 반복적인 홍보"], ["dangerous_or_illegal", "위험하거나 불법적인 내용"], ["self_harm_encouragement", "자해·타해를 부추기는 내용"], ["irrelevant_or_insincere", "편지와 무관하거나 성의 없는 답장"], ["other", "기타"]];
+// action 은 스크롤 밖 하단 고정 바다. 편지 신고 최종본(ReportScreens.tsx)의 Shell 과 같은 형태로 맞췄다.
+function Shell({ title, children, fallback, action }: { title: string; children: React.ReactNode; fallback: string; action?: React.ReactNode }) { return <main className="mobile-prototype letter-flow-screen"><header className="flow-header"><button type="button" onClick={() => navigateBack(fallback)} aria-label="이전으로 돌아가기">←</button><strong>{title}</strong><span /></header><div className="letter-flow-scroll">{children}</div>{action}</main>; }
+const reportReasons: ReadonlyArray<[ReportReason, string]> = [["abusive", "모욕적이거나 공격적인 표현"], ["sexual", "성적이거나 불쾌한 내용"], ["personal_information", "개인정보 또는 연락처 포함"], ["spam", "광고 또는 반복적인 홍보"], ["dangerous_or_illegal", "위험하거나 불법적인 내용"], ["self_harm_encouragement", "자해·타해를 부추기는 내용"], ["other", "기타"]];
 
 export function ReplyReportScreen({ letterId, complete = false }: { letterId?: string; complete?: boolean }) {
   const userId = getCurrentUserId(); const letter = letterId ? getLetterById(letterId) : undefined; const reply = letter?.reply;
   const existing = reply ? getReportForTarget(userId, "reply", reply.id) : undefined;
   const [reason, setReason] = useState<ReportReason | undefined>(); const [detail, setDetail] = useState(""); const [withBlock, setWithBlock] = useState(false); const [status, setStatus] = useState<"ready" | "submitting" | "failed" | "complete">(complete || existing ? "complete" : "ready");
-  if (!letter || !reply || letter.senderId !== userId) return <Shell title="답장 신고" fallback="/mailbox"><section className="flow-message"><h1>신고할 답장을 찾을 수 없어요.</h1><button className="flow-primary-button" type="button" onClick={() => navigateTo("/mailbox")}>편지함으로</button></section></Shell>;
+  if (!letter || !reply || letter.senderId !== userId) return <Shell title="편지 신고" fallback="/mailbox"><section className="flow-message"><h1>신고할 편지를 찾을 수 없어요</h1><button className="flow-primary-button" type="button" onClick={() => navigateTo("/mailbox")}>편지함으로</button></section></Shell>;
   const returnTo = `/mailbox/my/${encodeURIComponent(letter.id)}`;
-  if (existing && !complete) return <Shell title="답장 신고" fallback={returnTo}><section className="flow-message"><h1>이미 신고한 답장이에요.</h1><p>신고 내역은 차단 및 신고 관리에서 확인할 수 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/safety-management")}>신고 내역 확인</button><button className="flow-text-button" type="button" onClick={() => navigateTo(returnTo)}>답장으로 돌아가기</button></section></Shell>;
+  if (existing && !complete) return <Shell title="편지 신고" fallback={returnTo}><section className="flow-message"><h1>이미 신고한 편지예요</h1><p>신고 내역은 차단 및 신고 관리에서 확인할 수 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/safety-management")}>신고 내역 확인</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로</button></section></Shell>;
   function submit() { if (!reason || status === "submitting") return; setStatus("submitting"); window.setTimeout(() => { const report = createReport({ reporterId: userId, targetType: "reply", targetId: reply.id, reason, detail: detail.trim() || undefined, hiddenByReporter: false, ...(withBlock ? { blockedUserId: reply.writerId } : {}) }); if (!report) { setStatus("failed"); return; } if (withBlock) blockUser(userId, reply.writerId, "reply_report"); setStatus("complete"); }, 640); }
-  if (status === "complete") return <Shell title="신고 접수" fallback={returnTo}><section className="flow-message"><h1>{withBlock ? "신고를 접수하고 작성자를 차단했어요." : "신고를 접수했어요."}</h1><p>이 답장은 원하는 경우 숨길 수 있어요.</p><small className="flow-state-helper">신고 접수만으로 운영 결과가 바로 결정되지는 않아요.</small><button className="flow-primary-button" type="button" onClick={() => { hideContent(userId, "reply", reply.id); navigateTo(returnTo); }}>답장 숨기기</button><button className="flow-secondary-button" type="button" onClick={() => navigateTo(returnTo)}>답장으로 돌아가기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/safety-management")}>신고·차단 관리 보기</button></section></Shell>;
-  return <Shell title="답장 신고" fallback={returnTo}><section className="report-screen report-screen--expanded"><h1>이 답장을 신고할까요?</h1><p>다른 사람을 해치거나 불편하게 만드는 내용이 있다면 알려주세요.</p><dl className="report-target-summary"><div><dt>작성자</dt><dd>익명의 누군가</dd></div><div><dt>콘텐츠</dt><dd>받은 답장</dd></div></dl><fieldset><legend>신고 사유</legend>{reportReasons.map(([value, label]) => <label key={value}><input type="radio" name="reply-report-reason" checked={reason === value} onChange={() => setReason(value)} />{label}</label>)}</fieldset><label className="report-detail-label">추가 설명 <span>선택</span><textarea value={detail} onChange={(event) => setDetail(event.target.value)} placeholder="상황을 이해하는 데 필요한 내용만 적어주세요. 개인정보는 적지 않아도 괜찮아요." /></label><label className="report-block-choice"><input type="checkbox" checked={withBlock} onChange={(event) => setWithBlock(event.target.checked)} /><span><strong>이 작성자도 함께 차단하기</strong><small>차단하면 앞으로 이 사용자와 편지가 다시 연결되지 않아요.</small></span></label>{status === "submitting" ? <p className="flow-notice">신고를 접수하고 있어요.</p> : status === "failed" ? <p className="flow-notice">신고를 접수하지 못했어요. 인터넷 연결을 확인하고 다시 시도해주세요.</p> : null}<button className="flow-primary-button" type="button" disabled={!reason || status === "submitting"} onClick={submit}>{status === "failed" ? "다시 시도" : "신고 접수하기"}</button>{status === "failed" && <button className="flow-secondary-button" type="button" onClick={() => navigateTo(returnTo)}>답장으로 돌아가기</button>}</section></Shell>;
+  if (status === "complete") return <Shell title="신고 접수" fallback={returnTo}><section className="flow-message"><h1>{withBlock ? "신고를 접수하고 작성자를 차단했어요" : "신고를 접수했어요"}</h1><p>신고 내역은 차단 및 신고 관리에서 확인할 수 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/safety-management")}>신고 내역 확인</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로</button></section></Shell>;
+  // 화면은 편지 신고 최종본(/report-letter/:id, LetterReportFigmaScreen)과 같은 figma-report-* 마크업을 쓴다.
+  // 신고 대상은 답장(reply.id), 차단 대상은 답장 작성자(reply.writerId) 그대로다 — 동작은 바꾸지 않았다.
+  return <Shell title="편지 신고" fallback={returnTo} action={<div className="flow-fixed-action flow-fixed-action--single figma-report-action"><button className="flow-primary-button" disabled={!reason || status === "submitting"} type="button" onClick={submit}>{status === "failed" ? "다시 시도" : "신고 접수하기"}</button></div>}><section className="figma-report-screen"><header><h1>어떤 점이 불편하셨나요?</h1><p>알려주신 내용은 운영 정책에 따라 살펴보고,<br />작성자에게는 알리지 않아요.</p></header><fieldset><legend>신고 사유 (필수)</legend>{reportReasons.map(([value, label]) => <label key={value} className={reason === value ? "is-selected" : ""}><input type="radio" name="reply-report-reason" checked={reason === value} onChange={() => setReason(value)} /><span>{label}</span></label>)}</fieldset><section className="figma-report-detail"><label htmlFor="figma-reply-report-detail">추가 설명 (선택)</label><textarea id="figma-reply-report-detail" value={detail} maxLength={200} onChange={(event) => setDetail(event.target.value)} placeholder="신고 사유를 자세히 입력해 주세요." /><small>{detail.length} / 200</small></section><label className={`figma-report-setting${withBlock ? " is-selected" : ""}`}><input type="checkbox" checked={withBlock} onChange={(event) => setWithBlock(event.target.checked)} /><span><strong>신고와 작성자 차단 함께하기</strong><small>앞으로 이 사용자의 편지가 나타나지 않아요.</small></span></label><p className="flow-notice" role="status">{status === "submitting" ? "신고를 접수하고 있어요." : status === "failed" ? "신고를 접수하지 못했어요. 다시 시도해주세요." : ""}</p></section></Shell>;
 }
 
-const returnReasons: ReadonlyArray<[LetterReturnReason, string]> = [["no_time", "지금은 답장을 쓸 여유가 없어요"], ["difficult_to_reply", "어떤 말을 전해야 할지 어렵게 느껴져요"], ["too_heavy", "내가 답하기에 무거운 내용이에요"], ["unsafe_or_uncomfortable", "불편하거나 위험한 내용이 있어요"], ["assigned_by_mistake", "실수로 맡았어요"], ["other", "기타"]];
+
+// 두고 갈지 묻는 시트. 편지 읽기 화면 위에 그대로 얹히도록 화면이 아니라 컴포넌트로 뺐다.
+// 뒤에 읽던 편지가 남아 있어야 '이 편지를' 이라는 말이 성립한다.
+// 형태·모션은 앱에 이미 있는 임시저장 확인 시트(.draft-exit-*)를 그대로 쓴다.
+export function LetterReturnSheet({ onCancel, onConfirm }: { hasDraft: boolean; onCancel: () => void; onConfirm: () => void }) {
+  return <div className="draft-exit-overlay return-confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="return-confirm-title">
+    <section className="draft-exit-panel">
+      <div className="draft-exit-copy">
+        <h2 id="return-confirm-title">이 편지를 받지 않겠어요?</h2>
+        <p>받지 않은 편지는 다시 확인할 수 없어요.</p>
+      </div>
+      <div className="draft-exit-actions">
+        <button className="flow-primary-button" type="button" onClick={onCancel}>편지로 돌아가기</button>
+        <button className="flow-secondary-button" type="button" onClick={onConfirm}>받지 않기</button>
+      </div>
+    </section>
+  </div>;
+}
 
 export function LetterReturnScreen({ letterId }: { letterId?: string }) {
   const readerId = getCurrentUserId(); const letter = letterId ? getLetterById(letterId) : undefined; const draft = letterId ? getReplyDraft(letterId, readerId) : undefined;
-  const [phase, setPhase] = useState<"intro" | "reason" | "draft" | "processing" | "failed" | "complete">("intro"); const [reason, setReason] = useState<LetterReturnReason | undefined>(); const [detail, setDetail] = useState("");
-  if (!letter || letter.assignedReaderId !== readerId || !["assigned", "read", "waiting_for_reply"].includes(letter.status) || getLetterReturn(letter.id, readerId)) return <Shell title="편지 돌려보내기" fallback="/waiting-letters"><section className="flow-message"><h1>이미 돌려보낸 편지예요.</h1><p>이 편지는 다른 사람이 이어서 읽을 수 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/waiting-letters")}>기다리는 편지 보기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></Shell>;
-  const submit = () => { if (!reason || phase === "processing") return; setPhase("processing"); window.setTimeout(() => { const current = getLetterById(letter.id); const returned = current ? returnLetterToWaiting(letter.id, readerId, reason) : undefined; if (!returned) { setPhase("failed"); return; } const now = new Date().toISOString(); saveLetterReturn({ id: `return-${crypto.randomUUID?.() ?? Date.now()}`, letterId: letter.id, readerId, reason, detail: detail.trim() || undefined, hadReplyDraft: Boolean(draft?.content.trim()), replyDraftDeleted: Boolean(draft?.content.trim()), status: "completed", createdAt: now, completedAt: now }); if (draft?.content.trim()) deleteReplyDraft(letter.id, readerId); setPhase("complete"); }, 620); };
-  if (phase === "complete") return <Shell title="편지 돌려보내기" fallback="/waiting-letters"><section className="flow-message"><h1>편지를 다시 돌려보냈어요.</h1><p>다른 사람이 이 편지를 이어서 읽을 수 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/waiting-letters")}>다른 편지 둘러보기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></Shell>;
-  if (phase === "failed") return <Shell title="편지 돌려보내기" fallback={`/write-reply/${letter.id}`}><section className="flow-message"><h1>편지를 돌려보내지 못했어요.</h1><p>잠시 후 다시 시도해주세요.</p><button className="flow-primary-button" type="button" onClick={submit}>다시 시도</button><button className="flow-secondary-button" type="button" onClick={() => navigateTo(`/write-reply/${letter.id}`)}>답장으로 돌아가기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 이동</button></section></Shell>;
-  if (phase === "intro") return <Shell title="편지 돌려보내기" fallback={`/write-reply/${letter.id}`}><section className="flow-message"><h1>이 편지를 다시<br />돌려보낼까요?</h1><p>지금 답장을 쓰기 어렵다면 다른 사람이 이어서 읽을 수 있도록 돌려보낼 수 있어요.<br />작성자에게 누가 맡았는지는 알려지지 않아요.</p><button className="flow-primary-button" type="button" onClick={() => setPhase(draft?.content.trim() ? "draft" : "reason")}>돌려보내기</button><button className="flow-secondary-button" type="button" onClick={() => navigateTo(`/write-reply/${letter.id}`)}>계속 맡아두기</button></section></Shell>;
-  if (phase === "draft") return <Shell title="편지 돌려보내기" fallback={`/write-reply/${letter.id}`}><section className="flow-message"><h1>작성 중인 답장이 있어요.</h1><p>편지를 돌려보내면 작성 중인 답장은 함께 삭제돼요.</p><button className="flow-primary-button" type="button" onClick={() => setPhase("reason")}>초안을 삭제하고 돌려보내기</button><button className="flow-secondary-button" type="button" onClick={() => navigateTo(`/write-reply/${letter.id}`)}>답장을 계속 쓰기</button></section></Shell>;
-  return <Shell title="편지 돌려보내기" fallback={`/write-reply/${letter.id}`}><section className="report-screen report-screen--expanded"><h1>돌려보내는 이유를 알려주세요</h1><p>선택한 이유는 편지 작성자에게 공개되지 않아요.</p><fieldset><legend>반환 사유</legend>{returnReasons.map(([value, label]) => <label key={value}><input type="radio" name="return-reason" checked={reason === value} onChange={() => setReason(value)} />{label}</label>)}</fieldset>{reason === "unsafe_or_uncomfortable" && <aside className="return-safety-note"><strong>불편하거나 위험한 내용이었나요?</strong><span>신고한 뒤 돌려보내거나, 신고하지 않고 돌려보낼 수 있어요.</span><button type="button" onClick={() => navigateTo(`/report-letter/${letter.id}`)}>신고하기</button></aside>}<label className="report-detail-label">추가 설명 <span>선택</span><textarea value={detail} onChange={(event) => setDetail(event.target.value)} /></label>{phase === "processing" && <p className="flow-notice">편지를 돌려보내고 있어요.</p>}<button className="flow-primary-button" type="button" disabled={!reason || phase === "processing"} onClick={submit}>삭제하고 돌려보내기</button></section></Shell>;
+  const hasDraft = Boolean(draft?.content.trim());
+  // 편지 읽기 화면의 시트에서 이미 확인을 받고 왔다면(?start=1) 곧장 처리부터 시작한다.
+  // 주소로 직접 들어온 경우에는 확인 시트부터 보여준다.
+  const startNow = getCurrentAppSearchParams().get("start") === "1";
+  const [phase, setPhase] = useState<"intro" | "processing" | "failed" | "complete">(startNow ? "processing" : "intro");
+  // 처리는 훅 규칙 때문에 가드보다 위에 정의해 둔다 — 아래 가드들이 먼저 return 해버리면
+  // useEffect 가 조건부로 호출되어 버린다.
+  const runReturn = () => {
+    const current = letterId ? getLetterById(letterId) : undefined;
+    if (!current) { setPhase("failed"); return; }
+    setPhase("processing");
+    window.setTimeout(() => {
+      const latest = getLetterById(current.id);
+      const returned = latest ? returnLetterToWaiting(current.id, readerId) : undefined;
+      if (!returned) { setPhase("failed"); return; }
+      const now = new Date().toISOString();
+      saveLetterReturn({ id: `return-${crypto.randomUUID?.() ?? Date.now()}`, letterId: current.id, readerId, hadReplyDraft: hasDraft, replyDraftDeleted: hasDraft, status: "completed", createdAt: now, completedAt: now });
+      if (hasDraft) deleteReplyDraft(current.id, readerId);
+      setPhase("complete");
+    }, 1400);
+  };
+  // StrictMode 는 개발 중 효과를 두 번 실행한다. 그대로 두면 두 번째 실행이
+  // 이미 두고 온 편지를 다시 두려다 실패해 '이미 두고 온 편지예요'가 떴다.
+  // 한 번만 돌게 문을 걸어둔다.
+  const startedRef = useRef(false);
+  useEffect(() => { if (!startNow || startedRef.current) return; startedRef.current = true; runReturn(); }, []);
+  // 이 분기는 반드시 아래 가드보다 위에 있어야 한다.
+  // runReturn 이 saveLetterReturn 까지 마치면 getLetterReturn 이 기록을 돌려주어
+  // 가드가 먼저 걸리고, 완료 화면은 한 번도 보이지 않았다('이미 두고 온 편지예요'가 대신 떴다).
+  if (phase === "complete") return <Shell title="편지 두고 가기" fallback="/home"><section className="flow-message"><h1>편지를 다시 놓아두었어요</h1><p>다른 누군가가 이 마음을 만나게 될 거예요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(getListenEntryPath(getCurrentUserId()))}>다른 편지 만나기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></Shell>;
+  // 완료 직전의 사이 화면.
+  // 앱의 표준 로딩 표현(편지 만나기에서 쓰던 것)을 그대로 빌려 둘이 같은 모양으로 읽힌다.
+  // 직접 짜지 않는 이유: 점은 .listen-entry-loading-mark 안에서만 8px 로 커지고
+  // 그 밖에서는 버튼 속 크기 그대로라 전체 화면에서 너무 작게 나온다.
+  if (phase === "processing") return <Shell title="편지 두고 가기" fallback="/home"><ListenEntryLoadingState message="편지를 제자리에 두고 있어요" /></Shell>;
+  if (!letter || letter.assignedReaderId !== readerId || !["assigned", "read", "waiting_for_reply"].includes(letter.status) || getLetterReturn(letter.id, readerId)) return <Shell title="편지 두고 가기" fallback="/home"><section className="flow-message"><h1>{RETURNED_LETTER_TITLE}</h1><p>{RETURNED_LETTER_BODY}</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(getListenEntryPath(getCurrentUserId()))}>다른 편지 만나기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></Shell>;
+  if (phase === "failed") return <Shell title="편지 두고 가기" fallback={`/write-reply/${letter.id}`}><section className="flow-message"><h1>편지를 두고 오지 못했어요</h1><p>잠시 후 다시 시도해주세요.</p><button className="flow-primary-button" type="button" onClick={runReturn}>다시 시도</button><button className="flow-secondary-button" type="button" onClick={() => navigateTo(`/write-reply/${letter.id}`)}>답장으로 돌아가기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 이동</button></section></Shell>;
+  return <LetterReturnSheet hasDraft={hasDraft} onCancel={() => navigateTo(`/write-reply/${letter.id}`)} onConfirm={runReturn} />;
 }

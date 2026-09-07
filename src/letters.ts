@@ -126,6 +126,23 @@ function canUseStorage() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }
 
+/** 맡은 편지에 답장할 수 있는 기간. 이 시간이 지나면 편지는 자동으로 사라진다. */
+export const REPLY_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+
+/**
+ * 맡은 편지가 사라지는 시각(ms). 기준은 편지를 맡은 때(assignedAt)다.
+ * 아직 맡지 않았거나 이미 답장을 보낸 편지는 기한이 없으므로 undefined 를 준다.
+ * assignedAt 이 비어 있는 옛 기록은 기한을 계산할 수 없어 역시 undefined 다 —
+ * 이때는 남은 시간을 감추고 문구만 보여주는 쪽이 틀린 숫자를 띄우는 것보다 낫다.
+ */
+export function getReplyDeadline(letter: Pick<Letter, "status" | "assignedAt">) {
+  if (!letter.assignedAt) return undefined;
+  if (!["assigned", "read", "waiting_for_reply"].includes(letter.status)) return undefined;
+  const assigned = new Date(letter.assignedAt).getTime();
+  if (!Number.isFinite(assigned)) return undefined;
+  return assigned + REPLY_WINDOW_MS;
+}
+
 export function createLocalAnonymousUser() {
   return createId("local-user");
 }
@@ -141,6 +158,16 @@ export function getCurrentUserId() {
     return userId;
   } catch {
     return "local-user-memory";
+  }
+}
+
+/** 계정 삭제 뒤 재가입 사용자가 이전 로컬 계정의 편지 상태를 물려받지 않게 한다. */
+export function resetCurrentUserId() {
+  if (!canUseStorage()) return;
+  try {
+    window.localStorage.removeItem(CURRENT_USER_KEY);
+  } catch {
+    // Storage can be unavailable in private browser contexts.
   }
 }
 
@@ -334,7 +361,7 @@ export function markReplyOpened(letterId: string, senderId: string) {
   return updateLetter(letterId, { replyOpenedAt: new Date().toISOString() });
 }
 
-export function returnLetterToWaiting(letterId: string, readerId: string, reason: string) {
+export function returnLetterToWaiting(letterId: string, readerId: string, reason = "unspecified") {
   const latest = getLetterById(letterId);
   if (!latest || latest.assignedReaderId !== readerId || !["assigned", "read", "waiting_for_reply"].includes(latest.status)) return undefined;
   const now = new Date().toISOString();

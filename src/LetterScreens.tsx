@@ -306,7 +306,7 @@ export function ReadLetterScreen() {
 
             <section className="read-response" aria-labelledby="read-response-title">
               <p className="letter-kicker">AFTER READING</p>
-              <h2 id="read-response-title">이 마음 곁에 잠시 머물러 주세요.</h2>
+              <h2 id="read-response-title">이 마음 곁에 잠시 머물러 주세요</h2>
               <button
                 type="button"
                 className="letter-button letter-button--primary"

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>종이결 비교판</title>
+<style>
+  body { margin: 0; background: #f6f0e5; color: #2e2827;
+         font: 12px/1.5 Pretendard, system-ui, sans-serif; }
+  .row { position: relative; height: 190px; background-color: #f6f0e5;
+         background-repeat: repeat; background-position: center top;
+         border-bottom: 1px solid rgba(41,37,34,.18); }
+  .tag { position: absolute; left: 10px; top: 8px; padding: 3px 7px;
+         background: rgba(255,255,255,.82); font-size: 11px; font-weight: 600; }
+  .tag b { color: #4e345e; }
+</style>
+</head>
+<body>
+<div id="wrap"></div>
+<script>
+  // 덧칠, 배율
+  const 안 = [
+    [0.85, 420, '현재 (편지함·나의 공간)'],
+    [0.72, 900, ''],
+    [0.55, 900, ''],
+    [0.55, 1400, ''],
+    [0.40, 1400, ''],
+    [0.40, 902, '원본 크기'],
+    [0.20, 1400, ''],
+    [0, 1400, '덧칠 없음'],
+  ];
+  const wrap = document.getElementById('wrap');
+  for (const [a, s, memo] of 안) {
+    const d = document.createElement('div');
+    d.className = 'row';
+    const layer = `linear-gradient(rgba(246,240,229,${a}), rgba(246,240,229,${a}))`;
+    d.style.backgroundImage = a > 0 ? `${layer}, url("/assets/paper-pattern.jpg")` : `url("/assets/paper-pattern.jpg")`;
+    d.style.backgroundSize = a > 0 ? `auto, ${s}px` : `${s}px`;
+    const t = document.createElement('span');
+    t.className = 'tag';
+    t.innerHTML = `덧칠 <b>${Math.round(a*100)}%</b> · 배율 <b>${s}px</b>${memo ? ' · ' + memo : ''}`;
+    d.append(t);
+    wrap.append(d);
+  }
+</script>
+</body>
+</html>

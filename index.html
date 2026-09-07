@@ -3,9 +3,19 @@
   <head>
     <!-- figma:head-start -->
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- 홈 화면에 추가한 앱을 브라우저 UI 없는 단독 창으로 열기 위해 필요하다. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- black-translucent 만 상태표시줄을 투명하게 두고 페이지를 그 아래까지
+         그려준다. default · black 은 그 자리를 불투명하게 잡아버려 종이결이 이어지지 않는다.
+         viewport-fit=cover 와 짝이어야 하고, 그래야 env(safe-area-inset-*) 가 실제 값을 갖는다. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title><!-- figma:title --></title>
     <!-- figma:head-end -->
+    <!-- iOS 사파리는 본문의 이메일 주소·전화번호를 자동으로 링크(mailto:/tel:)로 바꾼다.
+         계정 관리의 이메일 주소가 파란 밑줄 링크로 보이던 원인. DOM 에는 <a> 가 없어
+         CSS 로는 막을 수 없고 이 메타로만 끈다. figma 관리 구간 밖에 둔다. -->
+    <meta name="format-detection" content="telephone=no, email=no, address=no, date=no" />
   </head>
   <body>
     <!-- figma:body-start -->

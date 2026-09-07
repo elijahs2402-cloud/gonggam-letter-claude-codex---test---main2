@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>편지함 목록 시안 비교</title>
+<!-- 실제 앱 스타일을 그대로 불러와 시안이 현재 디자인과 어긋나지 않게 한다 -->
+<link rel="stylesheet" href="/src/index.css" />
+<style>
+  body { margin: 0; background: #d9d2c6; }
+  .lab { display: flex; gap: 28px; padding: 24px; align-items: flex-start; }
+  .lab-col { width: 390px; flex: 0 0 390px; }
+  .lab-tag { margin: 0 0 10px; color: #2e2827; font: 600 13px/1.4 var(--font-sans); }
+  .lab-note { margin: 10px 0 0; color: #5f574f; font: 12px/1.6 var(--font-sans); }
+  /* 앱 셸 클래스를 그대로 쓰되, 폭·높이 제약만 시안 틀에 맞춘다 */
+  .lab-frame { width: 390px !important; height: 620px !important; min-height: 0 !important;
+               overflow: hidden; background: var(--paper); border: 1px solid rgba(41,37,34,.18);
+               margin: 0 !important; }
+  .lab-scroll { height: 100%; padding: 20px 24px; box-sizing: border-box; overflow: hidden; }
+
+  /* ── B안: 카드형 ───────────────────────────────── */
+  .card-list { display: grid; gap: 10px; }
+  .card-list .mailbox-unified-item {
+    padding: 16px 16px;
+    border: 1px solid rgba(41,37,34,.12);
+    border-bottom: 1px solid rgba(41,37,34,.12);
+    background: rgba(255,255,255,.42);
+  }
+
+  /* ── C안: 줄 목록 + 본문 미리보기 ─────────────── */
+  .preview-line {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    display: block;
+    margin-top: 6px;
+    overflow: hidden;
+    color: #6f675e;
+    font: 400 13px/1.5 var(--font-sans);
+    letter-spacing: -.02em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ── F안: 상태를 왼쪽 표식으로, 오른쪽엔 날짜, 아래 미리보기 ── */
+  .f-list .f-item {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 20px 1fr auto;
+    grid-template-rows: auto auto;
+    column-gap: 10px;
+    row-gap: 5px;
+    align-items: baseline;
+    padding: 16px 2px;
+    border: 0;
+    border-bottom: 1px solid rgba(41,37,34,.10);
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+  }
+  .f-item .f-mark { grid-column: 1; grid-row: 1; font-style: normal; font-size: 14px; line-height: 1.5; }
+  .f-item .f-name { grid-column: 2; grid-row: 1; color: var(--ink);
+                    font: 500 16px/1.5 var(--font-serif); letter-spacing: -.035em; }
+  .f-item .f-date { grid-column: 3; grid-row: 1; color: #8b8177;
+                    font: 400 12px/1.5 var(--font-sans); letter-spacing: -.02em; white-space: nowrap; }
+  .f-item .f-preview { grid-column: 2 / -1; grid-row: 2; overflow: hidden;
+                       color: #6f675e; font: 400 13px/1.4 var(--font-sans); letter-spacing: -.02em;
+                       text-overflow: ellipsis; white-space: nowrap; }
+  .f-item .mailbox-unified-unread { margin-left: 6px; }
+
+  /* F2: 안 읽은 답장은 미리보기 대신 상태 문장 (기다림을 지킨다) */
+  .f-item .f-sealed { grid-column: 2 / -1; grid-row: 2; color: var(--deep-plum);
+                      font: 500 13px/1.4 var(--font-sans); letter-spacing: -.02em; }
+  /* F3: 상태 라벨을 유지하고 날짜를 아래 줄 오른쪽으로 */
+  .f3-list .f-item { grid-template-columns: 20px 1fr auto; }
+  .f3-list .f-status { grid-column: 3; grid-row: 1; font: 600 13px/1.5 var(--font-sans); letter-spacing: -.02em; white-space: nowrap; }
+  .f3-list .f-preview { grid-column: 2; grid-row: 2; }
+  .f3-list .f-date { grid-column: 3; grid-row: 2; color: #8b8177; font: 400 12px/1.4 var(--font-sans); }
+  .f3-list .f-status--arrived { color: var(--deep-plum); }
+  .f3-list .f-status--sent { color: #9c7c3d; }
+  .f3-list .f-status--waiting { color: #8b8177; }
+
+  /* 표식 색을 상태 라벨 색과 일치시킨다.
+     원래 마크업에서는 부모 em 이 색을 갖고 표식이 물려받았는데,
+     표식을 왼쪽으로 떼어내면서 색을 잃고 셋 다 먹색이 되어 있었다. */
+  .f-list .f-mark.mailbox-inline-direction--arrived { color: var(--deep-plum); }
+  .f-list .f-mark.mailbox-inline-direction--sent { color: #9c7c3d; }
+  .f-list .f-mark.mailbox-inline-direction--waiting { color: #8b8177; }
+
+  /* 상태와 날짜는 자릿수가 제각각이라 왼쪽 정렬이면 오른쪽 끝이 들쭉날쭉하다.
+     오른쪽 정렬로 끝선을 맞추면 세로로 훑을 때 눈이 한 줄을 탄다. */
+  .f-list .f-date, .f3-list .f-status { text-align: right; justify-self: end; }
+</style>
+</head>
+<body>
+<div class="lab">
+
+  <!-- A: 현재 -->
+  <div class="lab-col">
+    <p class="lab-tag">A · 현재 (줄 목록)</p>
+    <div class="lab-frame mobile-prototype mailbox-screen mailbox-screen--inline-direction"><div class="lab-scroll">
+      <section class="mailbox-unified-list">
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--waiting"><span class="mailbox-unified-copy"><time>2026년 9월 1일</time><strong>내가 보낸 편지</strong><em><i class="mailbox-inline-direction mailbox-inline-direction--waiting" aria-hidden="true">–</i>답장 기다리는 중</em></span></button>
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--arrived is-unread"><span class="mailbox-unified-copy"><time>2026년 9월 1일</time><strong>고요한 새벽<i class="mailbox-unified-unread"></i></strong><em><i class="mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i>답장 도착</em></span></button>
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--sent"><span class="mailbox-unified-copy"><time>2026년 8월 31일</time><strong>따뜻한 오후</strong><em><i class="mailbox-inline-direction mailbox-inline-direction--sent" aria-hidden="true">→</i>답장 보냄</em></span></button>
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--waiting"><span class="mailbox-unified-copy"><time>2026년 8월 30일</time><strong>내가 보낸 편지</strong><em><i class="mailbox-inline-direction mailbox-inline-direction--waiting" aria-hidden="true">–</i>답장 기다리는 중</em></span></button>
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--arrived"><span class="mailbox-unified-copy"><time>2026년 8월 29일</time><strong>비 오는 창가</strong><em><i class="mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i>답장 도착</em></span></button>
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--arrived"><span class="mailbox-unified-copy"><time>2026년 8월 29일</time><strong>조용한 새벽</strong><em><i class="mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i>답장 도착</em></span></button>
+      </section>
+    </div></div>
+    <p class="lab-note">항목 85px · 한 화면 약 5개<br />구별 단서: 날짜·이름·상태</p>
+  </div>
+
+  <!-- B: 카드형 -->
+  <div class="lab-col">
+    <p class="lab-tag">B · 카드형</p>
+    <div class="lab-frame mobile-prototype mailbox-screen mailbox-screen--inline-direction"><div class="lab-scroll">
+      <section class="mailbox-unified-list card-list">
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--waiting"><span class="mailbox-unified-copy"><time>2026년 9월 1일</time><strong>내가 보낸 편지</strong><em><i class="mailbox-inline-direction mailbox-inline-direction--waiting" aria-hidden="true">–</i>답장 기다리는 중</em></span></button>
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--arrived is-unread"><span class="mailbox-unified-copy"><time>2026년 9월 1일</time><strong>고요한 새벽<i class="mailbox-unified-unread"></i></strong><em><i class="mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i>답장 도착</em></span></button>
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--sent"><span class="mailbox-unified-copy"><time>2026년 8월 31일</time><strong>따뜻한 오후</strong><em><i class="mailbox-inline-direction mailbox-inline-direction--sent" aria-hidden="true">→</i>답장 보냄</em></span></button>
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--waiting"><span class="mailbox-unified-copy"><time>2026년 8월 30일</time><strong>내가 보낸 편지</strong><em><i class="mailbox-inline-direction mailbox-inline-direction--waiting" aria-hidden="true">–</i>답장 기다리는 중</em></span></button>
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--arrived"><span class="mailbox-unified-copy"><time>2026년 8월 29일</time><strong>비 오는 창가</strong><em><i class="mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i>답장 도착</em></span></button>
+      </section>
+    </div></div>
+    <p class="lab-note">항목 약 100px + 간격 10px<br />테두리·배경이 편지를 낱장으로 보이게 한다</p>
+  </div>
+
+  <!-- C: 줄 목록 + 미리보기 -->
+  <div class="lab-col">
+    <p class="lab-tag">C · 줄 목록 + 본문 미리보기</p>
+    <div class="lab-frame mobile-prototype mailbox-screen mailbox-screen--inline-direction"><div class="lab-scroll">
+      <section class="mailbox-unified-list">
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--waiting"><span class="mailbox-unified-copy"><time>2026년 9월 1일</time><strong>내가 보낸 편지</strong><em><i class="mailbox-inline-direction mailbox-inline-direction--waiting" aria-hidden="true">–</i>답장 기다리는 중</em><span class="preview-line">요즘 잠이 잘 안 와서 새벽에 이 편지를 씁니다.</span></span></button>
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--arrived is-unread"><span class="mailbox-unified-copy"><time>2026년 9월 1일</time><strong>고요한 새벽<i class="mailbox-unified-unread"></i></strong><em><i class="mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i>답장 도착</em><span class="preview-line">당신의 새벽을 저도 알 것 같아요. 저는 그럴 때…</span></span></button>
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--sent"><span class="mailbox-unified-copy"><time>2026년 8월 31일</time><strong>따뜻한 오후</strong><em><i class="mailbox-inline-direction mailbox-inline-direction--sent" aria-hidden="true">→</i>답장 보냄</em><span class="preview-line">천천히 읽었어요. 무슨 말을 드릴지 오래 골랐습니다.</span></span></button>
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--waiting"><span class="mailbox-unified-copy"><time>2026년 8월 30일</time><strong>내가 보낸 편지</strong><em><i class="mailbox-inline-direction mailbox-inline-direction--waiting" aria-hidden="true">–</i>답장 기다리는 중</em><span class="preview-line">이직을 앞두고 마음이 자꾸 흔들립니다.</span></span></button>
+        <button type="button" class="mailbox-unified-item mailbox-unified-item--arrived"><span class="mailbox-unified-copy"><time>2026년 8월 29일</time><strong>비 오는 창가</strong><em><i class="mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i>답장 도착</em><span class="preview-line">비 오는 날의 이야기, 저에게도 비슷한 기억이…</span></span></button>
+      </section>
+    </div></div>
+    <p class="lab-note">항목 약 108px<br />어떤 편지였는지 바로 알아본다</p>
+  </div>
+
+  <!-- F: 왼쪽 표식 + 미리보기 -->
+  <div class="lab-col">
+    <p class="lab-tag">F · 왼쪽 표식 + 미리보기</p>
+    <div class="lab-frame mobile-prototype mailbox-screen mailbox-screen--inline-direction"><div class="lab-scroll">
+      <section class="f-list">
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--waiting" aria-hidden="true">–</i><span class="f-name">내가 보낸 편지</span><span class="f-date">2026.9.1</span><span class="f-preview">요즘 잠이 잘 안 와서 새벽에 이 편지를 씁니다.</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i><span class="f-name">고요한 새벽<i class="mailbox-unified-unread"></i></span><span class="f-date">2026.9.1</span><span class="f-preview">당신의 새벽을 저도 알 것 같아요. 저는 그럴 때…</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--sent" aria-hidden="true">→</i><span class="f-name">따뜻한 오후</span><span class="f-date">2026.8.31</span><span class="f-preview">천천히 읽었어요. 무슨 말을 드릴지 오래 골랐습니다.</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--waiting" aria-hidden="true">–</i><span class="f-name">내가 보낸 편지</span><span class="f-date">2026.8.30</span><span class="f-preview">이직을 앞두고 마음이 자꾸 흔들립니다.</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i><span class="f-name">비 오는 창가</span><span class="f-date">2026.8.29</span><span class="f-preview">비 오는 날의 이야기, 저에게도 비슷한 기억이…</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i><span class="f-name">조용한 새벽</span><span class="f-date">2026.8.29</span><span class="f-preview">오래 기다리셨죠. 이제야 답장을 씁니다.</span></button>
+      </section>
+    </div></div>
+    <p class="lab-note">상태는 왼쪽 표식으로, 날짜는 오른쪽으로<br />아낀 자리에 본문 미리보기</p>
+  </div>
+
+  <!-- F2 -->
+  <div class="lab-col">
+    <p class="lab-tag">F2 · 안 읽은 답장은 내용을 감춘다</p>
+    <div class="lab-frame mobile-prototype mailbox-screen mailbox-screen--inline-direction"><div class="lab-scroll">
+      <section class="f-list">
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--waiting" aria-hidden="true">–</i><span class="f-name">내가 보낸 편지</span><span class="f-date">2026.9.1</span><span class="f-preview">요즘 잠이 잘 안 와서 새벽에 이 편지를 씁니다.</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i><span class="f-name">고요한 새벽<i class="mailbox-unified-unread"></i></span><span class="f-date">2026.9.1</span><span class="f-sealed">답장이 도착했어요. 아직 열어보지 않았어요.</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--sent" aria-hidden="true">→</i><span class="f-name">따뜻한 오후</span><span class="f-date">2026.8.31</span><span class="f-preview">천천히 읽었어요. 무슨 말을 드릴지 오래 골랐습니다.</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--waiting" aria-hidden="true">–</i><span class="f-name">내가 보낸 편지</span><span class="f-date">2026.8.30</span><span class="f-preview">이직을 앞두고 마음이 자꾸 흔들립니다.</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i><span class="f-name">비 오는 창가</span><span class="f-date">2026.8.29</span><span class="f-preview">비 오는 날의 이야기, 저에게도 비슷한 기억이…</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i><span class="f-name">조용한 새벽</span><span class="f-date">2025.12.3</span><span class="f-preview">오래 기다리셨죠. 이제야 답장을 씁니다.</span></button>
+      </section>
+    </div></div>
+    <p class="lab-note">안 읽은 답장(2번째)은 내용 대신 상태 문장<br />해가 바뀐 편지(마지막)만 연도 표시</p>
+  </div>
+
+  <!-- F3 -->
+  <div class="lab-col">
+    <p class="lab-tag">F3 · 상태 라벨을 남긴다</p>
+    <div class="lab-frame mobile-prototype mailbox-screen mailbox-screen--inline-direction"><div class="lab-scroll">
+      <section class="f-list f3-list">
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--waiting" aria-hidden="true">–</i><span class="f-name">내가 보낸 편지</span><span class="f-status f-status--waiting">기다리는 중</span><span class="f-preview">요즘 잠이 잘 안 와서 새벽에 이 편지를 씁니다.</span><span class="f-date">2026.9.1</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i><span class="f-name">고요한 새벽<i class="mailbox-unified-unread"></i></span><span class="f-status f-status--arrived">답장 도착</span><span class="f-sealed">아직 열어보지 않았어요.</span><span class="f-date">2026.9.1</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--sent" aria-hidden="true">→</i><span class="f-name">따뜻한 오후</span><span class="f-status f-status--sent">답장 보냄</span><span class="f-preview">천천히 읽었어요. 무슨 말을 드릴지…</span><span class="f-date">2026.8.31</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--waiting" aria-hidden="true">–</i><span class="f-name">내가 보낸 편지</span><span class="f-status f-status--waiting">기다리는 중</span><span class="f-preview">이직을 앞두고 마음이 자꾸 흔들립니다.</span><span class="f-date">2026.8.30</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i><span class="f-name">비 오는 창가</span><span class="f-status f-status--arrived">답장 도착</span><span class="f-preview">비 오는 날의 이야기, 저에게도…</span><span class="f-date">2026.8.29</span></button>
+        <button type="button" class="f-item"><i class="f-mark mailbox-inline-direction mailbox-inline-direction--arrived" aria-hidden="true">←</i><span class="f-name">조용한 새벽</span><span class="f-status f-status--arrived">답장 도착</span><span class="f-preview">오래 기다리셨죠. 이제야 답장을…</span><span class="f-date">2025.12.3</span></button>
+      </section>
+    </div></div>
+    <p class="lab-note">표식 + 글자 라벨을 함께 둔다<br />날짜는 아래 줄 오른쪽으로</p>
+  </div>
+
+</div>
+</body>
+</html>

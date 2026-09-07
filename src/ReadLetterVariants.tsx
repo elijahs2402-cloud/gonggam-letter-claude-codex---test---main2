@@ -104,7 +104,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <section className="reading-error" role="alert">
       <span className="reading-error__mark" aria-hidden="true">!</span>
-      <h1>편지를 불러오지 못했어요.</h1>
+      <h1>편지를 불러오지 못했어요</h1>
       <p>인터넷 연결을 확인한 뒤 다시 시도해주세요.</p>
       <button type="button" onClick={onRetry}>다시 시도하기</button>
     </section>

@@ -1,4 +1,4 @@
-import { navigateBack, navigateTo } from "./navigation";
+import { navigateBack } from "./navigation";
 
 const TERMS_SECTIONS = [
   {
@@ -40,9 +40,9 @@ const TERMS_SECTIONS = [
   },
 ];
 
-export function TermsMockupScreen() {
+export function TermsMockupScreen({ stageClassName = "" }: { stageClassName?: string } = {}) {
   return (
-    <main className="mobile-prototype auth-screen terms-screen">
+    <main className={`mobile-prototype auth-screen terms-screen terms-screen--my-space${stageClassName ? ` ${stageClassName}` : ""}`}>
 
       <header className="auth-header">
         <button type="button" onClick={() => navigateBack("/my-space")} aria-label="이전 화면으로 돌아가기">←</button>
@@ -75,16 +75,6 @@ export function TermsMockupScreen() {
           ))}
         </section>
       </div>
-
-      <footer className="auth-actions">
-        <button
-          type="button"
-          className="auth-primary"
-          onClick={() => navigateTo("/nickname-entry")}
-        >
-          동의하고 계속하기
-        </button>
-      </footer>
     </main>
   );
 }

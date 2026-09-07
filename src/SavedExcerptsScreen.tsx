@@ -6,8 +6,9 @@ import { getCurrentUserId, getLetterById } from "./letters";
 import { navigateBack, navigateTo } from "./navigation";
 import { getReportForTarget } from "./reports";
 import { deleteSealedExcerpt, getSealedExcerptsByUser, restoreSealedExcerpt, type SealedExcerpt } from "./sealedExcerpts";
+import { formatDate } from "./datetime";
 
-function date(value: string) { return new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric" }).format(new Date(value)); }
+function date(value: string) { return formatDate(value); }
 
 export function SavedExcerptsScreen() {
   const userId = getCurrentUserId();

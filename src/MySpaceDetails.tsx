@@ -9,15 +9,16 @@ import { isDevelopmentPreview } from "./CommonStates";
 import { getNotificationSettings } from "./notifications";
 import { getReportForTarget, getReportsByUser } from "./reports";
 import { getSealedExcerptsByReplyId, getSealedExcerptsByUser } from "./sealedExcerpts";
+import { formatDate } from "./datetime";
 
 function Header({ title, fallback = "/my-space" }: { title: string; fallback?: string }) { return <header className="flow-header"><button type="button" onClick={() => navigateBack(fallback)} aria-label="이전으로 돌아가기">←</button><strong>{title}</strong><span /></header>; }
 const short = (value: string, length = 52) => { const text = value.trim().replace(/\s+/g, " "); return text.length > length ? `${text.slice(0, length)}…` : text; };
-const date = (value?: string) => value ? new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric" }).format(new Date(value)) : "도착 날짜를 알 수 없어요";
+const date = (value?: string) => value ? formatDate(value) : "도착 날짜를 알 수 없어요";
 
 export function ReceivedRepliesScreen() {
   const userId = getCurrentUserId(); const [version, setVersion] = useState(0); const qaMode = isPrototypeQaMode(); const replies = getReceivedRepliesByUser(userId);
   const waitingLetters = getWaitingReplyLettersByUser(userId);
-  return <main className="mobile-prototype received-replies-screen" data-version={version}><Header title="받은 답장" /><div className="received-replies-scroll"><section className="subpage-heading"><h1>받은 답장</h1><p>내 이야기를 읽은 사람이 전한 마음이에요.</p></section>{replies.length ? <section className="received-reply-list">{replies.map((letter) => <ReceivedReplyRow key={letter.id} letter={letter} userId={userId} onOpen={() => { markReplyOpened(letter.id, userId); setVersion((value) => value + 1); navigateTo(`/mailbox/my/${encodeURIComponent(letter.id)}`); }} />)}</section> : <section className="received-reply-empty"><h2>아직 도착한 답장이 없어요.</h2><p>{waitingLetters.length ? "보낸 편지들이 각자의 답장을 기다리고 있어요." : "마음을 남기면 한 사람이 읽고 답장을 전해요."}</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(waitingLetters.length ? "/mailbox" : "/write-letter")}>{waitingLetters.length ? "내가 보낸 편지 보기" : "편지 쓰기"}</button></section>}{qaMode && <details className="prototype-test-panel"><summary>프로토타입 테스트</summary><p>데이터가 없는 상태는 새 사용자 또는 답장이 없는 계정에서 확인할 수 있어요.</p></details>}</div></main>;
+  return <main className="mobile-prototype received-replies-screen" data-version={version}><Header title="받은 답장" /><div className="received-replies-scroll"><section className="subpage-heading"><h1>받은 답장</h1><p>내 이야기를 읽은 사람이 전한 마음이에요.</p></section>{replies.length ? <section className="received-reply-list">{replies.map((letter) => <ReceivedReplyRow key={letter.id} letter={letter} userId={userId} onOpen={() => { markReplyOpened(letter.id, userId); setVersion((value) => value + 1); navigateTo(`/mailbox/my/${encodeURIComponent(letter.id)}`); }} />)}</section> : <section className="received-reply-empty"><h2>아직 도착한 답장이 없어요</h2><p>{waitingLetters.length ? "보낸 편지들이 각자의 답장을 기다리고 있어요." : "마음을 남기면 한 사람이 읽고 답장을 전해요."}</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(waitingLetters.length ? "/mailbox" : "/write-letter")}>{waitingLetters.length ? "내가 보낸 편지 보기" : "편지 쓰기"}</button></section>}{qaMode && <details className="prototype-test-panel"><summary>프로토타입 테스트</summary><p>데이터가 없는 상태는 새 사용자 또는 답장이 없는 계정에서 확인할 수 있어요.</p></details>}</div></main>;
 }
 
 function ReceivedReplyRow({ letter, userId, onOpen }: { letter: Letter; userId: string; onOpen: () => void }) {
@@ -26,7 +27,7 @@ function ReceivedReplyRow({ letter, userId, onOpen }: { letter: Letter; userId: 
   return <button type="button" className={`received-reply-row${unread ? " is-unread" : ""}`} onClick={onOpen}><span className="received-reply-top"><time>{date(reply.createdAt)}</time>{unread && <em>새 답장</em>}</span><strong>{reply.anonymousName ?? "익명의 누군가"}에게서 답장이 도착했어요.</strong><span>{state ? state[0] : `내 편지: ${short(letter.content)}`}</span>{state && <small>{state[1]}</small>}{sealed > 0 && <small>간직한 문구 {sealed}개</small>}</button>;
 }
 
-export function AnonymousNameSettingsScreen() {
+export function AnonymousNameSettingsScreen({ stageClassName = "" }: { stageClassName?: string } = {}) {
   const [current, setCurrent] = useState(getCurrentAnonymousName());
   const [name, setName] = useState(current);
   const [confirm, setConfirm] = useState(false);
@@ -48,46 +49,62 @@ export function AnonymousNameSettingsScreen() {
     setIsToastLeaving(false);
     window.setTimeout(() => setIsToastLeaving(true), 3000);
   };
-  return <main className="mobile-prototype auth-screen nef-screen">
+  return <main className={`mobile-prototype auth-screen nef-screen${stageClassName ? ` ${stageClassName}` : ""}`}>
     {toast && <p className={`home-draft-saved-toast${isToastLeaving ? " is-leaving" : ""}`} role="status" aria-live="polite" onAnimationEnd={() => { if (isToastLeaving) setToast(""); }}>{toast}</p>}
     <header className="auth-header"><button type="button" onClick={() => navigateBack("/my-space")} aria-label="이전 화면으로 돌아가기">←</button><span>나의 이름</span><i aria-hidden="true" /></header>
     <div className="auth-scroll nef-scroll">
-      <section className="auth-intro-copy nef-intro"><h1>이름 바꾸기</h1><p className="auth-helper">앞으로 보내는 편지와 답장에 이 이름이 보여요.<br />이전에 보낸 편지와 답장에는 당시의 이름이 그대로 남아요.</p></section>
+      {/* 헤더가 "나의 이름", 대제목이 "이름 바꾸기"로 둘 다 라벨이라
+        말을 거는 느낌이 없었다. 같은 일을 하는 이름 정하기
+        ("나를 부를 이름을 정해볼까요?")와 같은 어투로 맞춘다. */}
+    {/* 대제목을 두 줄로 끊는다. 어절 경계("새 이름을 / 정해볼까요?")에서 나누어
+        읽는 호흡이 끊기지 않게 했다.
+        도움말은 '앞으로 / 지난'을 짝지어 짧은 두 줄로 줄였다. 원래는
+        "앞으로 보내는 편지와 답장에 이 이름이 보여요 / 이전에 보낸 편지와
+        답장에는 당시의 이름이 그대로 남아요"였는데, 제목이 두 줄이 되면서
+        글이 네 줄로 쌓여 화면 위쪽이 무거웠다. '편지와 답장'을 '편지'로 묶어도
+        뜻은 그대로다. 지난 편지는 그대로라는 말은 남겼다 — 이름을 바꿀 때
+        사람들이 실제로 걱정하는 지점이라 빼면 안 되는 정보다. */}
+    <section className="auth-intro-copy nef-intro"><h1>새 이름을<br />정해볼까요?</h1><p className="auth-helper">앞으로 보내는 편지에 이 이름이 보여요.<br />지난 편지에는 그때의 이름이 남아요.</p></section>
       <section className="nef-field" aria-labelledby="nickname-settings-label">
         <label id="nickname-settings-label" className="nef-label" htmlFor="nickname-settings-input">이름</label>
-        <div className="anonymous-name-input-wrap"><input id="nickname-settings-input" type="text" value={name} maxLength={12} onChange={(event) => { setName(event.target.value); setFailed(false); }} placeholder="이름을 입력해주세요" aria-describedby="nickname-settings-note nickname-settings-count" />{name && <button className="anonymous-name-clear" type="button" onClick={() => setName("")} aria-label="입력한 이름 지우기">×</button>}</div>
-        <div className="anonymous-name-field__meta"><span id="nickname-settings-note">12자 이내로 입력해주세요.</span><span id="nickname-settings-count" aria-live="polite">{name.length} / 12</span></div>
+        <div className="anonymous-name-input-wrap"><input id="nickname-settings-input" type="text" value={name} maxLength={10} onChange={(event) => { setName(event.target.value); setFailed(false); }} placeholder="이름을 입력해주세요" aria-describedby="nickname-settings-note nickname-settings-count" />{name && <button className="anonymous-name-clear" type="button" onClick={() => setName("")} aria-label="입력한 이름 지우기">×</button>}</div>
+        <div className="anonymous-name-field__meta"><span id="nickname-settings-note">10자 이내로 입력해주세요.</span><span id="nickname-settings-count" aria-live="polite">{name.length} / 10</span></div>
       </section>
       <div className="nef-suggest-wrap"><button className="nef-suggest-button" type="button" onClick={suggestRandom}>이름 추천 받기</button></div>
       {failed && <div className="flow-notice"><strong>익명 이름을 바꾸지 못했어요.</strong><span>잠시 후 다시 시도해주세요.</span></div>}
     </div>
     <footer className="auth-actions nickname-settings-actions"><button className="auth-primary" type="button" disabled={!canSubmit} onClick={() => setConfirm(true)}>이 이름으로 바꾸기</button></footer>
-    {confirm && <div className="draft-exit-overlay nickname-change-sheet" role="dialog" aria-modal="true" aria-labelledby="nickname-change-title"><section className="draft-exit-panel"><div className="draft-exit-copy"><h2 id="nickname-change-title">나의 이름을 바꿀까요?</h2><span>앞으로 작성하는 편지와 답장에는 새로운 이름이 보여요.<br />이전에 작성한 기록의 이름은 바뀌지 않아요.</span></div><div className="draft-exit-actions"><button className="auth-primary" type="button" onClick={save}>이름 바꾸기</button><button className="auth-secondary" type="button" onClick={() => setConfirm(false)}>취소</button></div></section></div>}
+    {confirm && <div className="draft-exit-overlay nickname-change-sheet" role="dialog" aria-modal="true" aria-labelledby="nickname-change-title"><section className="draft-exit-panel"><div className="draft-exit-copy"><h2 id="nickname-change-title">나의 이름을 바꿀까요?</h2><span>앞으로 작성하는 편지와 답장에는 새로운 이름이 보여요.<br />이전에 작성한 기록의 이름은 바뀌지 않아요.</span></div><div className="draft-exit-actions"><button className="flow-primary-button" type="button" onClick={save}>이름 바꾸기</button><button className="flow-text-button" type="button" onClick={() => setConfirm(false)}>취소</button></div></section></div>}
   </main>;
 }
 
 const guideContent = [
   ["공감편지는", "익명으로 마음을 담은 편지를 남기고, 한 사람이 읽어 답장을 전하는 서비스예요."],
   ["답장이 도착하기까지", "답장은 바로 도착하지 않을 수 있어요. 편지를 맡은 사람이 천천히 마음을 읽고 답장을 전해요."],
-  ["편지와 답장", "여러 통의 편지를 보낼 수 있고, 각 편지는 저마다의 여정을 이어가요. 편지를 맡은 뒤 답장이 어렵다면 조용히 돌려보낼 수 있어요."],
-  ["안전하게 이용하기", "불편한 편지는 언제든 신고하거나 차단할 수 있어요. 공감편지는 전문적인 상담이나 의료 서비스가 아니므로, 위급한 상황에서는 반드시 전문 기관의 도움을 먼저 요청해 주세요."],
+  ["편지와 답장", "여러 통의 편지를 보낼 수 있고, 각 편지는 저마다의 여정을 이어가요. 편지를 맡은 뒤 답장이 어렵다면 조용히 두고 갈 수 있어요."],
+  // 위급 상황 안내는 아래 강조 블록이 맡는다. 여기서 한 번 더 말하면
+  // 같은 지시가 한 화면에 두 번 나와 오히려 무게가 흩어진다.
+  ["안전하게 이용하기", "불편한 편지는 언제든 신고하거나 차단할 수 있어요. 공감편지는 전문적인 상담이나 의료 서비스가 아니에요."],
 ];
 const safetyContent = [
   ["개인정보", "실명, 연락처, 주소, SNS 계정은 적지 않도록 해요."], ["서로를 존중하기", "상대방을 비난하거나 모욕하는 표현은 사용할 수 없어요."], ["제한되는 내용", "성적·불법·위협 콘텐츠와 자해·타해를 부추기는 표현은 제한돼요."], ["신고와 차단", "편지와 답장은 신고될 수 있으며, 차단하면 해당 사용자와 다시 연결되지 않아요."], ["프로토타입 안내", "AI 또는 규칙 기반 안전 검토는 오판할 수 있어요. 실제 서비스에서는 중요한 제재에 운영 검토가 필요해요."],
 ];
 
-export function GuideScreen({ kind }: { kind: "service" | "safety" }) { const isSafety = kind === "safety"; const content = isSafety ? safetyContent : guideContent; return <main className="mobile-prototype guide-screen"><Header title={isSafety ? "안전하게 마음을 나누기 위해" : "이용 안내"} /><div className="my-detail-scroll"><section className="subpage-heading"><h1>{isSafety ? "안전하게 마음을\n나누기 위해" : "공감편지를\n이용하는 방법"}</h1>{isSafety && <p>서로의 마음이 안전하게 머물 수 있도록 함께 지켜주세요.</p>}</section><section className="guide-sections">{content.map(([title, body]) => <article key={title}><h2>{title}</h2><p>{body}</p></article>)}</section>{!isSafety && <p className="guide-urgent-note"><span aria-hidden="true">✻</span><strong>지금 바로 도움이 필요한 상황이라면, 편지보다 가까운 사람이나 지역의 긴급 지원에 먼저 연락해주세요.</strong></p>}{isSafety && isDevelopmentPreview() && <p className="guide-todo">TODO · 실제 서비스 개발 시 운영 정책과 검토 절차를 연결해야 해요.</p>}</div></main>; }
+export function GuideScreen({ kind, stageClassName = "" }: { kind: "service" | "safety"; stageClassName?: string }) { const isSafety = kind === "safety"; const content = isSafety ? safetyContent : guideContent; return <main className={`mobile-prototype guide-screen${isSafety ? "" : " guide-screen--my-space"}${stageClassName ? ` ${stageClassName}` : ""}`}><Header title={isSafety ? "안전하게 마음을 나누기 위해" : "이용 안내"} /><div className="my-detail-scroll">{/* 이용 안내는 헤더 타이틀("이용 안내")이 곧 제목이라
+      본문 대제목이 같은 말을 두 번 하는 꼴이었다. 헤더만 남긴다.
+      안전 안내는 부제가 따로 있어 대제목이 제 몫을 한다. */}
+{isSafety && <section className="subpage-heading"><h1>{"안전하게 마음을\n나누기 위해"}</h1><p>서로의 마음이 안전하게 머물 수 있도록 함께 지켜주세요.</p></section>}<section className="guide-sections">{content.map(([title, body]) => <article key={title}><h2>{title}</h2><p>{body}</p></article>)}</section>{!isSafety && <p className="guide-urgent-note"><span aria-hidden="true">✻</span><strong>공감편지의 답장은 언제 도착할지 알 수 없어요. 지금 도움이 필요하다면 가까운 사람이나 전문 기관에 먼저 연락해주세요.</strong></p>}{isSafety && isDevelopmentPreview() && <p className="guide-todo">TODO · 실제 서비스 개발 시 운영 정책과 검토 절차를 연결해야 해요.</p>}</div></main>; }
 
-export function PolicyScreen({ kind }: { kind: "privacy" | "terms" }) {
+export function PolicyScreen({ kind, stageClassName = "" }: { kind: "privacy" | "terms"; stageClassName?: string }) {
   const privacy = kind === "privacy";
   const title = privacy ? "개인정보 처리방침" : "서비스 이용약관";
   const privacySections = [
     ["1. 문서의 목적과 적용 범위", "이 개인정보 처리방침은 공감편지 서비스를 이용하는 과정에서 수집·이용되는 정보의 종류와 처리 방식을 안내하기 위해 마련되었습니다."],
     ["2. 서비스 이용과 사용자 보호", "공감편지는 익명 기반 서비스로, 이용자를 특정할 수 있는 정보를 필수로 요구하지 않으며 최소한의 정보만 수집합니다."],
     ["3. 정보 처리 및 보관 기준", "수집된 정보는 서비스 제공 목적으로만 이용되며, 관련 법령에 따른 보관 기간이 지나면 지체 없이 파기됩니다."],
-    ["4. 문의와 변경 사항 안내", "개인정보 처리방침에 대한 문의는 앱 내 문의 경로를 통해 접수할 수 있으며, 내용이 변경되는 경우 서비스 내 공지로 안내드립니다."],
+    ["4. 변경 사항 안내", "개인정보 처리방침의 내용이 변경되는 경우 서비스 내 공지를 통해 안내드립니다."],
   ];
-  if (privacy) return <main className="mobile-prototype policy-screen privacy-policy-screen"><Header title={title} /><div className="my-detail-scroll"><section className="privacy-policy-document" aria-label="개인정보 처리방침">{privacySections.map(([heading, body]) => <article key={heading}><h2>{heading}</h2><p>{body}</p></article>)}</section></div></main>;
+  if (privacy) return <main className={`mobile-prototype policy-screen privacy-policy-screen${stageClassName ? ` ${stageClassName}` : ""}`}><Header title={title} /><div className="my-detail-scroll"><section className="privacy-policy-document" aria-label="개인정보 처리방침">{privacySections.map(([heading, body]) => <article key={heading}><h2>{heading}</h2><p>{body}</p></article>)}</section></div></main>;
   const notice = privacy ? "최종 개인정보 처리방침은 실제 서비스 개발과 법률 검토 후 연결됩니다." : "최종 이용약관은 실제 서비스 정책과 법률 검토 후 연결됩니다.";
   const sections = ["문서의 목적과 적용 범위", "서비스 이용과 사용자 보호", "정보 처리 및 보관 기준", "문의와 변경 사항 안내"];
 
@@ -120,7 +137,7 @@ export function AppInfoScreen() { return <main className="mobile-prototype app-i
 function providerLabel(provider?: string) {
   if (provider === "apple") return "Apple";
   if (provider === "google") return "Google";
-  if (provider === "kakao") return "카카오";
+  if (provider === "kakao") return "토스";
   return "mock";
 }
 

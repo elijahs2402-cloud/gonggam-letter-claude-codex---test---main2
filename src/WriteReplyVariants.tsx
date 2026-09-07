@@ -244,7 +244,7 @@ function ReplyPreview({
         {sent ? (
           <>
             <p className="letter-kicker">마음 전송 완료</p>
-            <h2 id="reply-preview-title">마음을 조심스럽게 건넸어요.</h2>
+            <h2 id="reply-preview-title">마음을 조심스럽게 건넸어요</h2>
             <p>새벽구름에게 답장이 전달된 것으로 보여주는 샘플 상태예요.</p>
             <button type="button" className="letter-button letter-button--primary" onClick={onReturnToLetter}>
               받은 편지로 돌아가기

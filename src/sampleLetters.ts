@@ -21,6 +21,15 @@ export function seedSampleLetters() {
   });
 }
 
+/** 계정 삭제 후 재가입 흐름을 새 사용자처럼 검수할 수 있도록 샘플 편지를 되돌린다. */
+export function resetSampleLetters() {
+  const now = new Date().toISOString();
+  samples.forEach((sample, index) => {
+    const createdAt = new Date(Date.now() - (index + 1) * 60 * 60 * 1000).toISOString();
+    saveLetter({ ...sample, createdAt, updatedAt: now });
+  });
+}
+
 export function isSampleLetter(letter: Letter) {
   return letter.id.startsWith(SAMPLE_PREFIX);
 }

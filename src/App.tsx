@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   ReadLetterScreen,
   WriteLetterScreen,
-  WriteReplyScreen,
 } from "./LetterScreens";
 import {
   WriteLetterAScreen,
@@ -47,7 +46,6 @@ import {
   LetterPreviewScreen,
   LetterSentScreen,
   LetterJourneyScreen,
-  LetterDelayScreen,
   LetterWithdrawnScreen,
   MyLetterDetailScreen,
   MyLetterRepliedDemoScreen,
@@ -80,8 +78,11 @@ import { getCurrentAppPath, getCurrentAppSearchParams, navigateTo, replaceRoute 
 import { MindContentBoard } from "./prototype-board/MindContentBoard";
 import { LetterSafetyReviewScreen, UrgentSupportScreen } from "./SafetyScreens";
 import { LetterReportCompleteDemoScreen, LetterReportFigmaScreen, LetterReportScreen, SafetyManagementScreen } from "./ReportScreens";
-import { AnonymousNameScreen, AuthGateRedirect, DirectNicknameScreen, DormantAccountScreen, LoginScreen, OnboardingRedesignScreen, TermsConsentScreen, getRequiredOnboardingPath } from "./AuthScreens";
+import { HomeSceneScreen } from "./HomeSceneScreen";
+import { HomeCardsScreen } from "./HomeCardsScreen";
+import { AuthGateRedirect, DirectNicknameScreen, DormantAccountScreen, LoginScreen, OnboardingRedesignScreen, TermsConsentScreen, getRequiredOnboardingPath } from "./AuthScreens";
 import { GratitudeScreen } from "./GratitudeScreen";
+import { HomeRuledScreen } from "./HomeRuledScreen";
 import { getMockAuthSnapshot, isMockAuthenticated, setPostLoginPath } from "./mockAuth";
 import { NotificationsScreen, NotificationSettingsScreen } from "./NotificationScreens";
 import { LetterReturnScreen, ReplyReportScreen } from "./SafetyActionScreens";
@@ -90,6 +91,9 @@ import { LetterJourneyLabScreen } from "./LetterJourneyLab";
 import { AnonymousNameSettingsScreen, AppInfoScreen, GuideScreen, PolicyScreen, ReceivedRepliesScreen } from "./MySpaceDetails";
 import { AccountRestrictedScreen, AccountSettingsScreen, AccountWithdrawalScreen, DataAndPrivacyScreen, LoginInformationScreen, WithdrawalCompleteScreen } from "./AccountManagementScreens";
 import { NotFoundScreen, ServiceStateScreen } from "./CommonStates";
+import { DesignReviewScreen, type ReviewDirection, type ReviewScreen } from "./DesignReview";
+import { getCurrentUserId } from "./letters";
+import { getListenEntryPath } from "./waitingLetters";
 
 type MoodChoice = "write" | "listen";
 
@@ -141,9 +145,10 @@ function RedirectToHome() {
 function IntroScreen() {
   const auth = getMockAuthSnapshot();
   const handleEntry = () => {
-    // After withdrawal, the intro remains available but service entry starts at login.
+    // 탈퇴한 사람은 처음 온 사람과 같다 — 약관도 이름도 다시 받아야 하므로
+    // 로그인이 아니라 온보딩부터 시작한다.
     if (auth.state === "withdrawn") {
-      goTo("/login");
+      goTo("/onboarding");
       return;
     }
     if (isMockAuthenticated()) {
@@ -247,7 +252,7 @@ function DirectionAScreen() {
         <button
           className="a-choice"
           type="button"
-          onClick={() => goTo("/listen-entry-a")}
+          onClick={() => goTo(getListenEntryPath(getCurrentUserId()))}
         >
           <span className="a-choice-index">02</span>
           <span className="a-choice-copy">
@@ -380,6 +385,18 @@ export function App() {
   const systemState = getCurrentAppSearchParams().get("system");
   if (systemState === "offline" || systemState === "maintenance" || systemState === "update_required" || systemState === "restricted" || systemState === "error") return <ServiceStateScreen variant={systemState} />;
 
+  // Design-review comparison screens. Separate from the service flow: they read
+  // no stored data and nothing in the app links to them.
+  if (path.startsWith("/design-review/")) {
+    const [dir, screen] = path.slice("/design-review/".length).split("/");
+    const isDirection = dir === "a" || dir === "b" || dir === "c";
+    const isScreen = screen === "home" || screen === "mailbox" || screen === "letter" || screen === "my-space";
+    if (isDirection && isScreen) {
+      return <DesignReviewScreen dir={dir as ReviewDirection} screen={screen as ReviewScreen} />;
+    }
+    return <AuthGateRedirect to="/design-review/a/home" />;
+  }
+
   // Intro was formerly the fallback route; retain both direct and root entry.
   if (path === "/" || path === "/intro") return <IntroScreen />;
 
@@ -396,15 +413,15 @@ export function App() {
     if (next && next !== "/terms-consent") return <AuthGateRedirect to={next} />;
     return <TermsConsentScreen />;
   }
-  if (path === "/anonymous-name") {
-    const next = getRequiredOnboardingPath();
-    const isMotionPreview = getCurrentAppSearchParams().get("motion") === "preview";
-    if (next && next !== "/anonymous-name" && next !== "/nickname-entry" && !isMotionPreview) return <AuthGateRedirect to={next} />;
-    return <AnonymousNameScreen />;
-  }
+  // /anonymous-name 라우트를 지웠다. 이름 화면은 두 개면 된다 —
+  // 신규 가입자용 /nickname-entry, 기존 회원용 /anonymous-name-settings.
+  // 세 번째였던 이 화면은 앱 어디에서도 연결되지 않으면서 URL 로는 열려,
+  // 온보딩을 마친 사람도 여기서 이름을 바꿀 수 있었다. 그 화면에만 있던
+  // 환영 연출은 실제로 쓰이는 /nickname-entry 로 옮겼다.
   if (path === "/nickname-entry") {
     const next = getRequiredOnboardingPath();
-    if (next && next !== "/anonymous-name" && next !== "/nickname-entry") return <AuthGateRedirect to={next} />;
+    // 지워진 /anonymous-name 과의 비교도 함께 뺀다 — 이제 갈 수 없는 곳이다.
+    if (next && next !== "/nickname-entry") return <AuthGateRedirect to={next} />;
     return <DirectNicknameScreen />;
   }
   if (path === "/onboarding-complete") {
@@ -412,8 +429,8 @@ export function App() {
     return <AuthGateRedirect to="/home" />;
   }
 
-  const protectedPaths = new Set(["/home", "/write-letter", "/listen-entry-a", "/waiting-letters", "/mailbox", "/my-space", "/saved-excerpts", "/received-replies", "/anonymous-name-settings", "/account-settings", "/login-information", "/data-and-privacy", "/account-withdrawal", "/notifications", "/notification-settings", "/safety-management", "/service-guide", "/safety-guide", "/privacy-policy", "/app-info", "/prototype/mailbox-list-lab", "/prototype/waiting-letters-list-lab", "/letter-safety-review"]);
-  const protectedFlowPrefixes = ["/gratitude/", "/report-reply/", "/return-letter/", "/reply-safety-review/", "/reply-sending/", "/report-letter/", "/report-letter-figma/", "/report-letter-legacy/", "/read-letter/", "/assigned-letter/", "/assign-letter/", "/write-reply/", "/reply-review/", "/reply-sent/", "/letter-journey/", "/reply-arrived/", "/letter-delay/", "/letter-withdrawn/", "/mailbox/my/", "/mailbox/replied/"];
+  const protectedPaths = new Set(["/home", "/home-ruled", "/home-scene", "/home-cards", "/write-letter", "/listen-entry-a", "/waiting-letters", "/mailbox", "/my-space", "/saved-excerpts", "/received-replies", "/anonymous-name-settings", "/account-settings", "/login-information", "/data-and-privacy", "/account-withdrawal", "/notifications", "/notification-settings", "/safety-management", "/service-guide", "/safety-guide", "/privacy-policy", "/app-info", "/prototype/mailbox-list-lab", "/prototype/waiting-letters-list-lab", "/letter-safety-review"]);
+  const protectedFlowPrefixes = ["/gratitude/", "/report-reply/", "/return-letter/", "/reply-safety-review/", "/reply-sending/", "/report-letter/", "/report-letter-figma/", "/report-letter-legacy/", "/read-letter/", "/assigned-letter/", "/assign-letter/", "/write-reply/", "/reply-review/", "/reply-sent/", "/letter-journey/", "/reply-arrived/", "/letter-withdrawn/", "/mailbox/my/", "/mailbox/replied/"];
   const isProtectedServicePath = protectedPaths.has(path) || ["/letter-preview", "/letter-sent", "/reader-promise", "/urgent-support"].includes(path) || protectedFlowPrefixes.some((prefix) => path.startsWith(prefix));
   if (isProtectedServicePath && !isMockAuthenticated()) {
     setPostLoginPath(path);
@@ -424,6 +441,9 @@ export function App() {
   if (path === "/notification-settings") return <NotificationSettingsScreen />;
 
   if (path === "/prototype/mind-content-board") return <MindContentBoard />;
+  if (path === "/home-cards") return <HomeCardsScreen />;
+  if (path === "/home-scene") return <HomeSceneScreen />;
+  if (path === "/home-ruled") return <HomeRuledScreen />;
   if (path === "/home") return <HomeScreen />;
   if (path === "/my-space") return <MySpaceScreen />;
   if (path === "/saved-excerpts") return <SavedExcerptsScreen />;
@@ -485,7 +505,6 @@ export function App() {
   if (path.startsWith("/reply-sent/")) return <ReplySentScreen letterId={decodeURIComponent(path.slice("/reply-sent/".length))} />;
   if (path.startsWith("/letter-journey/")) return <LetterJourneyScreen letterId={decodeURIComponent(path.slice("/letter-journey/".length))} />;
   if (path.startsWith("/reply-arrived/")) return <ReplyArrivedScreen letterId={decodeURIComponent(path.slice("/reply-arrived/".length))} />;
-  if (path.startsWith("/letter-delay/")) return <LetterDelayScreen letterId={decodeURIComponent(path.slice("/letter-delay/".length))} />;
   if (path.startsWith("/letter-withdrawn/")) return <LetterWithdrawnScreen letterId={decodeURIComponent(path.slice("/letter-withdrawn/".length))} />;
   if (path === "/mailbox-my-replied-demo") return <MyLetterRepliedDemoScreen />;
   if (path.startsWith("/mailbox/my/")) return <MyLetterDetailScreen letterId={decodeURIComponent(path.slice("/mailbox/my/".length))} />;
@@ -500,7 +519,10 @@ export function App() {
   if (path === "/read-letter-a") return <ReadLetterAScreen />;
   if (path === "/read-letter-b") return <ReadLetterBScreen />;
   if (path === "/read-letter-c") return <ReadLetterCScreen />;
-  if (path === "/write-reply") return <WriteReplyScreen />;
+  // 답장 쓰기 확정본. 실제 흐름은 /write-reply/:letterId 로 들어오고,
+  // 이름만 부른 /write-reply 는 시안 확인용으로 표본 편지를 띄운다.
+  // (예전 /write-reply 시안 WriteReplyScreen 은 이 화면으로 대체되었다.)
+  if (path === "/write-reply") return <WriteReplyFlowScreen letterId="sample-waiting-letter-one" />;
   if (path === "/write-reply-a") return <WriteReplyAScreen />;
   if (path === "/write-reply-b") return <WriteReplyBScreen />;
   if (path === "/write-reply-c") return <WriteReplyCScreen />;

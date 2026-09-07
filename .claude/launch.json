@@ -4,8 +4,9 @@
     {
       "name": "gonggam-letter-app",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "8444"],
-      "port": 8444
+      "runtimeArgs": ["run", "dev"],
+      "port": 6334,
+      "autoPort": true
     }
   ]
 }

@@ -1,11 +1,5 @@
 import type { Letter, LetterStatus } from "./letters";
 
-// A letter claimed by a reader stays exclusively with that reader for three days.
-// It must not be made available to anyone else during this reply window.
-export const WAITING_FOR_READER_DELAY_MS = 60 * 1000;
-export const ASSIGNED_REPLY_DELAY_MS = 3 * 24 * 60 * 60 * 1000;
-export const WAITING_EXTENSION_DELAY_MS = 60 * 1000;
-
 const copy: Record<LetterStatus, { label: string; description: string }> = {
   submitted: { label: "편지를 맡아두었어요", description: "당신의 이야기를 조심스럽게 전달할 준비를 하고 있어요." },
   waiting_for_reader: { label: "읽어줄 사람을 기다리고 있어요", description: "당신의 이야기를 읽어줄 사람을 기다리고 있어요." },
@@ -28,15 +22,3 @@ export function getLetterStatusDate(letter: Letter) {
   return letter.lastStatusChangedAt ?? letter.createdAt;
 }
 
-export function isLetterDelayEligible(letter: Letter, now = Date.now()) {
-  if (["replied", "withdrawn"].includes(letter.status)) return false;
-  const baseline = letter.status === "waiting_for_reader"
-    ? letter.lastRedistributedAt ?? letter.lastStatusChangedAt ?? letter.createdAt
-    : letter.assignedAt ?? letter.readAt ?? letter.waitingForReplyAt ?? letter.lastStatusChangedAt;
-  const extension = letter.waitingExtendedAt;
-  if (extension && now - new Date(extension).getTime() < WAITING_EXTENSION_DELAY_MS) return false;
-  const threshold = letter.status === "waiting_for_reader" ? WAITING_FOR_READER_DELAY_MS : ASSIGNED_REPLY_DELAY_MS;
-  return Boolean(baseline) && now - new Date(baseline).getTime() >= threshold;
-}
-
-export function canRedistribute(letter: Letter) { return letter.status === "waiting_for_reader" && !letter.assignedReaderId; }

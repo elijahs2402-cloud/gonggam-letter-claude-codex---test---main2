@@ -3,6 +3,7 @@ import { getCurrentAppSearchParams, navigateTo } from "./navigation";
 import { clearReplyDraft, readReplyDraft, writeReplyDraft, type ReplyDraft } from "./replyDraft";
 import { clearEmotionJourney, saveEmotionRecord } from "./emotionJourney";
 import { clearLetterPreviewDraft, readLetterPreviewDraft } from "./letterPreviewDraft";
+import { formatDateTime } from "./datetime";
 
 type PreviewState = "normal" | "short" | "long" | "sending" | "departing" | "sent" | "error" | "empty";
 type SendState = "idle" | "sending" | "departing" | "error" | "sent";
@@ -75,7 +76,7 @@ function PreviewExitDialog({
         aria-describedby="preview-exit-copy"
       >
         <p className="preview-dialog-kicker">보내기 전 확인</p>
-        <h2 id="preview-exit-title">아직 보내지 않은 마음이 있어요.</h2>
+        <h2 id="preview-exit-title">아직 보내지 않은 마음이 있어요</h2>
         <p id="preview-exit-copy">지금 나가면 작성한 내용이 사라질 수 있어요.</p>
         <div className="preview-dialog-actions">
           <button ref={continueRef} type="button" className="preview-primary-button" onClick={onContinue}>
@@ -178,7 +179,7 @@ export function ReplyPreviewScreen() {
         <section className="preview-empty-content" aria-labelledby="preview-empty-title">
           <p className="preview-brand">공감편지</p>
           <img src="/assets/write-letter-object-tight.png" alt="" aria-hidden="true" />
-          <h1 id="preview-empty-title">아직 작성한 마음이 없어요.</h1>
+          <h1 id="preview-empty-title">아직 작성한 마음이 없어요</h1>
           <p>먼저 마음을 적은 뒤 다시 확인해주세요.</p>
         </section>
         <div className="reply-preview-fixed-actions reply-preview-fixed-actions--single">
@@ -281,13 +282,13 @@ export function ReplyPreviewScreen() {
           </div>
           <p className="preview-edited-at">
             {draft?.editedAt
-              ? `${new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(draft.editedAt))}에 마지막으로 다듬었어요.`
+              ? `${formatDateTime(draft.editedAt)}에 마지막으로 다듬었어요.`
               : "보내기 전 마지막으로 살펴보는 마음이에요."}
           </p>
         </article>
 
         <section className="preview-check-guide" aria-labelledby="preview-check-title">
-          <h2 id="preview-check-title">보내기 전, 잠시 살펴봐주세요.</h2>
+          <h2 id="preview-check-title">보내기 전, 잠시 살펴봐주세요</h2>
           <ul>
             <li>상대의 감정을 판단하거나 단정하지 않았는지</li>
             <li>내 경험이나 해결 방법을 강요하지 않았는지</li>

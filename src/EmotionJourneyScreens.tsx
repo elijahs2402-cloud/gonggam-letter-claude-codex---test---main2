@@ -45,7 +45,7 @@ function MissingJourney() {
   return (
     <section className="emotion-missing-state">
       <p className="emotion-kicker">마음 기록</p>
-      <h1>먼저 지금의 마음을 골라주세요.</h1>
+      <h1>먼저 지금의 마음을 골라주세요</h1>
       <p>마음의 이름과 느껴진 정도를 고르면 편지를 이어서 쓸 수 있어요.</p>
       <button type="button" className="emotion-primary-button" onClick={() => navigateTo("/emotion-check-in")}>마음 상태 고르기</button>
     </section>
@@ -220,8 +220,8 @@ export function EmotionSummaryScreen() {
         <EmotionTopbar label="보관 완료" fallback="/direction-a" />
         <section className="emotion-complete-state" role="status">
           <p className="emotion-kicker">나만의 기록</p>
-          <h1>오늘의 마음을<br />조용히 간직했어요.</h1>
-          <p>기록은 이 기기에 조용히 남아 있어요.</p>
+          <h1>오늘의 마음을<br />조용히 간직했어요</h1>
+          <p>이 마음은 이 기기에만 조용히 남아요.</p>
           <div className="emotion-complete-actions">
             <button type="button" className="emotion-primary-button" onClick={() => navigateTo("/mailbox")}>편지함으로 이동</button>
             <button type="button" className="emotion-text-button" onClick={() => navigateTo("/direction-a")}>마음 선택으로 돌아가기</button>

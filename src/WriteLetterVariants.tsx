@@ -178,7 +178,7 @@ function VariantPreview({
         {sent ? (
           <div className="variant-send-complete">
             <p className="letter-kicker">전달 완료</p>
-            <h2 id="variant-preview-title">편지가 조심스럽게 전달됐어요.</h2>
+            <h2 id="variant-preview-title">편지가 조심스럽게 전달됐어요</h2>
             <p className="variant-send-complete-copy">
               이제 누군가가 당신의 마음을 천천히 만나게 될 거예요.
             </p>

@@ -1,5 +1,4 @@
 import { getOpenDeliveryIssues } from "./deliveryIssues";
-import { isLetterDelayEligible } from "./letterStatus";
 import type { Letter } from "./letters";
 
 export type SentLetterDisplayKind =
@@ -9,7 +8,6 @@ export type SentLetterDisplayKind =
   | "send_failed"
   | "reply_arrived_unread"
   | "reply_opened"
-  | "delayed"
   | "withdrawn"
   | "reply_writing"
   | "assigned"
@@ -40,7 +38,6 @@ const fixtureStatus = (letter: Letter): SentLetterDisplayStatus | undefined => {
     reply_writing: { kind: "reply_writing", label: "답장을 준비하고 있어요", description: "어떤 말을 건넬지 천천히 생각하고 있어요." },
     reply_arrived_unread: { kind: "reply_arrived_unread", label: "답장이 도착했어요", description: "당신의 편지를 읽은 사람이 마음을 전했어요.", hasUnreadReply: true },
     reply_opened: { kind: "reply_opened", label: "답장을 받았어요", description: "도착한 답장을 다시 읽을 수 있어요." },
-    delayed: { kind: "delayed", label: "조금 오래 기다리고 있어요", description: "지금의 편지 상태를 확인하고 선택할 수 있어요.", requiresAttention: true },
     redistributed: { kind: "redistributed", label: "다시 전달되어 기다리고 있어요", description: "새로운 사람이 편지를 만날 수 있도록 다시 기다리고 있어요." },
     withdrawn: { kind: "withdrawn", label: "거둔 편지", description: "이 편지는 조용히 거두었어요." },
     send_failed: { kind: "send_failed", label: "발송을 마치지 못했어요", description: "작성한 내용은 이 기기에 보관되어 있어요.", requiresAttention: true },
@@ -64,7 +61,6 @@ export function getSentLetterDisplayStatus(letter: Letter, userId?: string): Sen
   if (letter.reply) return !letter.replyOpenedAt
     ? { kind: "reply_arrived_unread", label: "답장이 도착했어요", description: "당신의 편지를 읽은 사람이 마음을 전했어요.", hasUnreadReply: true, activityAt: letter.repliedAt ?? activityAt }
     : { kind: "reply_opened", label: "답장을 받았어요", description: "도착한 답장을 다시 읽을 수 있어요.", activityAt: letter.replyOpenedAt ?? letter.repliedAt ?? activityAt };
-  if (isLetterDelayEligible(letter)) return { kind: "delayed", label: "조금 오래 기다리고 있어요", description: "지금의 편지 상태를 확인하고 선택할 수 있어요.", requiresAttention: true, activityAt };
   if (letter.status === "withdrawn") return { kind: "withdrawn", label: "거둔 편지", description: "이 편지는 조용히 거두었어요.", activityAt: letter.withdrawnAt ?? activityAt };
   if (letter.status === "waiting_for_reply" || letter.status === "read") return { kind: "reply_writing", label: "답장을 준비하고 있어요", description: "어떤 말을 건넬지 천천히 생각하고 있어요.", activityAt };
   if (letter.status === "assigned") return { kind: "assigned", label: "한 사람이 편지를 맡았어요", description: "당신의 이야기를 천천히 읽고 있어요.", activityAt: letter.assignedAt ?? activityAt };
