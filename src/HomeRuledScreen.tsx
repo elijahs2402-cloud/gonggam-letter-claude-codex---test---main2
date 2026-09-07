@@ -5,6 +5,7 @@ import { getCurrentUserId } from "./letters"
 import { unreadNotificationCount } from "./notifications"
 import { navigateTo } from "./navigation"
 import { getReadCardPath } from "./waitingLetters";
+import styles from "./HomeRuledScreen.module.css";
 
 // 피그마 168-316 시안(괘선 2단 + 어두운 골동품 가구)에 '옅은 면'을 더한 홈.
 // 기존 /home 은 건드리지 않고 이 라우트에서만 비교한다.
@@ -48,8 +49,8 @@ export function HomeRuledScreen() {
   const hasUnreadNotifications = unreadNotificationCount(userId) > 0
 
   return (
-    <main className="mobile-prototype home-screen home-ruled-screen">
-      <div className={`home-heading-top${isScrolled ? " is-scrolled" : ""}`}>
+    <main className={`mobile-prototype home-screen home-ruled-screen ${styles.screen}`}>
+      <div className={`home-heading-top ${styles.headingTop}${isScrolled ? ` ${styles.scrolled}` : ""}`}>
         <p className="home-brand">공감편지</p>
         <button
           className="home-notification-button"
@@ -62,7 +63,7 @@ export function HomeRuledScreen() {
       </div>
 
       <div
-        className="home-scroll-region"
+        className={`home-scroll-region ${styles.scroll}`}
         onScroll={(event) => setIsScrolled(event.currentTarget.scrollTop > 4)}
       >
         <header className="home-heading">
@@ -74,16 +75,16 @@ export function HomeRuledScreen() {
           <p className="home-heading-helper">지금 마음이 향하는 쪽을 골라주세요.</p>
         </header>
 
-        <section className="home-ruled-choices" aria-label="오늘의 선택">
+        <section className={styles.choices} aria-label="오늘의 선택">
           {CHOICES.map((choice) => (
             <button
               key={choice.key}
-              className="home-ruled-choice"
+              className={styles.choice}
               type="button"
               aria-label={choice.label}
               onClick={() => navigateTo(choice.key === "read" ? getReadCardPath(userId) : choice.path)}
             >
-              <img className="home-ruled-icon" src={choice.icon} alt="" />
+              <img className={styles.icon} src={choice.icon} alt="" />
               <strong>
                 {choice.title[0]}
                 <br />
@@ -94,19 +95,19 @@ export function HomeRuledScreen() {
                 <br />
                 {choice.helper[1]}
               </span>
-              <i className="home-ruled-arrow" aria-hidden="true" />
+              <i className={styles.arrow} aria-hidden="true" />
             </button>
           ))}
         </section>
 
-        <p className="home-ruled-footer home-ruled-footer--scroll">
+        <p className={`${styles.footer} ${styles.scrollFooter}`}>
           <img src="/assets/decor-left.png" alt="" />
           <span>마음을 쓰고, 마음을 읽는 시간</span>
           <img src="/assets/decor-right.png" alt="" />
         </p>
       </div>
 
-      <p className="home-ruled-footer home-ruled-footer--fixed">
+      <p className={`${styles.footer} ${styles.fixedFooter}`}>
         <img src="/assets/decor-left.png" alt="" />
         <span>마음을 쓰고, 마음을 읽는 시간</span>
         <img src="/assets/decor-right.png" alt="" />

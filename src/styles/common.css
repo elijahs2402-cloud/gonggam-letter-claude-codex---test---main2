@@ -1,0 +1,303 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Gelasio:wght@400;500;600;700&display=swap");
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+@import 'tailwindcss';
+
+@font-face {
+  font-family: "SUITE";
+  src: url("/assets/fonts/SUITE-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  color: var(--ink);
+  background: var(--bg-app);
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  /* Families. Serif carries brand, emotion and letter bodies; sans carries all UI
+     chrome; SUITE is reserved for the small brand mark. */
+  --font-serif: "Noto Serif KR", "Nanum Myeongjo", Batang, serif;
+  --font-sans: "Pretendard Variable", Pretendard, "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-brand: SUITE, "Pretendard Variable", Pretendard, sans-serif;
+  /* 숫자와 인용부호 전용. Georgia 는 옛스타일 숫자와 인용부호가 좋아
+     본문 글꼴과 섞어 쓰기에 맞는다. 한글은 포함하지 않으므로
+     숫자·문장부호에만 쓴다. */
+  /* Georgia → Times New Roman → Gelasio → 일반 세리프 순으로 내려간다.
+     Georgia 는 마이크로소프트 소유라 웹폰트로 배포할 수 없어 설치된 기기에서만 쓰인다
+     (윈도우·맥·iOS 에는 기본 탑재). 둘 다 없는 환경(주로 안드로이드)에서는
+     Gelasio 가 받는다 — Georgia 와 자폭이 호환되는 오픈 폰트(OFL)라
+     대체돼도 줄바꿈과 인상이 유지된다. Gelasio 마저 없으면 일반 세리프로 떨어진다. */
+  --font-numeral: Georgia, "Times New Roman", Gelasio, serif;
+
+  /* Surfaces */
+  --bg-app: #d8d0c3;
+  --paper: #f6f0e5;
+  --paper-light: #f6f0e5;
+  --paper-deep: #eadfce;
+  --paper-warm: #f8f2e7;
+  --surface-card: #fffdf8;
+  /* The letter sheet, and the darker mat the framed letter screens sit on.
+     The mat is 13.6 L* below the sheet, which is what makes the sheet read
+     as a separate piece of paper rather than a tinted area. */
+  --surface-letter: #fbf7ef;
+  --surface-mat: #d8d0c3;
+
+  /* Text. Ratios against --paper-light: 13.4 / 4.5 / 4.7. */
+  --ink: #292522;
+  --muted-ink: #766c61;
+  --faint-ink: #7a6853;
+  /* The mat is 11 L* darker than paper, so secondary text sitting on it needs
+     its own, darker pair to stay above 4.5:1. */
+  --muted-ink-on-mat: #60574f;
+  --faint-ink-on-mat: #655645;
+
+  /* Action and brand */
+  --plum: #73508d;
+  --deep-plum: #4e345e;
+  --action-primary: var(--deep-plum);
+  --action-primary-hover: #402a4d;
+  --action-primary-active: #361f40;
+  --action-secondary-hover-bg: rgba(78, 52, 94, 0.08);
+  --action-secondary-active-bg: rgba(78, 52, 94, 0.14);
+  --link: var(--plum);
+
+  /* Status. The -text variants are darkened to clear 4.5:1 on paper; the plain
+     names stay at their original value for borders, fills and illustration tints. */
+  --sage: #698071;
+  --gold: #bc923e;
+  --terracotta: #a8563d;
+  --status-success-text: #52665a;
+  --status-caution-text: #7d6330;
+  --status-error-text: #9b4d35;
+
+  /* Disabled */
+  --disabled-bg: #d8cfc1;
+  --disabled-text: #8d8378;  /* 비활성 글자 — 채움(#d8cfc1) 위 2.41:1, 종이 위 3.6:1 */
+  /* 버튼 체계 — 역할 4종의 공통 치수·색 */
+  --btn-h: 56px;                 /* 주요·보조 버튼 높이 (안정식당 실측 56pt 기준) */
+  --btn-h-text: var(--tap-min);  /* 텍스트 버튼 높이(터치 최소치 44px) */
+  --btn-pad-x: 18px;
+  --fw-button: 600;
+  --action-on-primary: #fffaf0;  /* 자두색 채움 위 글자색 1종 */
+  --disabled-border: rgba(78, 52, 94, 0.22);
+
+  /* Rules */
+  --rule-light: rgba(41, 37, 34, 0.12);
+  --rule: rgba(41, 37, 34, 0.28);
+  --gold-rule-faint: rgba(188, 146, 62, 0.25);
+  --gold-rule-light: rgba(188, 146, 62, 0.32);
+  --gold-rule: var(--frame-rule);
+  --gold-rule-mid: rgba(188, 146, 62, 0.55);
+  --gold-rule-strong: rgba(188, 146, 62, 0.68);
+
+  --focus-ring: var(--gold);
+  --nav-inactive: #756a5f;
+
+  /* The framed-paper card: a thin gold rule with a paper mat around it. The mat
+     colour stays per-surface so it reads as a margin of the page it sits on;
+     the rule and the mat width are shared. */
+  --frame-rule: rgba(188, 146, 62, 0.5);
+  --frame-mat-width: 7px;
+
+  /* ── 색 성분 토큰 ─────────────────────────────────────────
+     알파를 조합해 쓰기 위해 기본색을 rgb 성분으로 분리한다.
+     사용: rgba(var(--gold-rgb), var(--a50))                */
+  --ink-rgb: 41, 37, 34;
+  --deep-plum-rgb: 78, 52, 94;
+  --plum-rgb: 115, 80, 141;
+  --gold-rgb: 188, 146, 62;
+  --terracotta-rgb: 168, 86, 61;
+  --sage-rgb: 105, 128, 113;
+  --paper-rgb: 246, 240, 229;
+  --paper-deep-rgb: 234, 223, 206;
+  --surface-card-rgb: 255, 253, 248;
+  --surface-mat-rgb: 216, 208, 195;
+  --white-rgb: 255, 255, 255;
+
+  /* ── 알파 계단 12단 ───────────────────────────────────────
+     기존 75종의 임의 알파값을 이 12단으로 수렴시킨다.       */
+  --a05: .05;  --a10: .10;  --a15: .15;  --a20: .20;
+  --a26: .26;  --a33: .33;  --a40: .40;  --a50: .50;
+  --a60: .60;  --a72: .72;  --a85: .85;  --a95: .95;
+
+  /* ── 아이콘 크기 척도 ─────────────────────────────────────
+     터치 영역은 아이콘 크기와 무관하게 --tap-min(44px) 유지  */
+  --icon-sm: 16px;   /* 행 안 보조 (화살표 등) */
+  --icon-md: 20px;   /* 기본 (닫기 등) */
+  --icon-lg: 24px;   /* 헤더 액션 (뒤로가기) */
+
+  /* 조판 장식 — 아이콘이 아니라 큰 인용부호 */
+  --fs-quote-mark: 52px;
+
+  /* Type scale. 12px is the floor and it carries four roles — nav, status, date,
+     caption — so those separate by weight and colour rather than by size. */
+  --fs-tab: 12px;
+  --fs-status: 12px;
+  --fs-caption: 12px;
+  --fs-date: 12px;
+  --fs-body-sm: 14px;
+  --fs-body: 15px;
+  --fs-button: 16px;  /* 안정식당 전체폭 CTA 5개 실측 16pt 기준 */
+  --fs-letter: 16px;
+  --fs-letter-title: 17px;
+  --fs-section: 18px;
+  /* A screen title names the page and sits left under the header. A state title
+     is the centred line that fills an empty, error or completion screen — a
+     different job, so it gets its own size rather than borrowing the title's. */
+  --fs-state-title: 21px;
+  --fs-title-sm: 24px;   /* 사용자 닉네임이 들어가는 인사말 제목 — 28px 는 12자에서 일러스트와 겹친다 */
+  --fs-title: 28px;
+  --fs-display: 30px;
+
+  /* Weights that go with the sizes above. */
+  --fw-title: 500;
+  --fw-section: 600;
+  --fw-status: 700;
+  --fw-nav: 600;
+  --fw-caption: 400;
+  /* 제목 안에서 이름·핵심어를 드는 굵기. 전수 조사에서 600 네 곳 / 700 세 곳으로
+     갈려 있었고, 그 선이 의미를 따르지도 않았다(내 것/상대 것으로 읽히다 무너졌다).
+     색이 이미 강한 신호라 굵기까지 두 단계로 쪼갤 이유가 없어 600 으로 모았다.
+     한 값으로 묶어 두어야 화면이 늘어도 다시 갈라지지 않는다. */
+  --fw-name: 600;
+
+  --lh-title: 1.4;
+  --lh-tight: 1.35;
+  --lh-snug: 1.5;
+  --lh-normal: 1.7;
+  --lh-relaxed: 1.75;
+  --lh-letter: 1.875;  /* 편지 본문 — 쓰기·읽기·원문 시트가 모두 이 값을 쓴다 (Figma 30px/16px) */
+  --lh-none: 1;       /* 조판 장식·아이콘 정렬용 — 줄 상자를 글자에 붙인다 */
+
+  /* Korean loses its shape below about -0.04em, so titles stop there. */
+  --ls-display: -0.035em;
+  --ls-title: -0.03em;
+  --ls-section: -0.025em;
+  --ls-body: -0.01em;
+
+  /* Spacing, 4px grid */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 28px;
+  --sp-8: 32px;
+  --gutter: 24px;
+  --section-gap: 28px;
+  --card-pad: 20px;
+  --row-min: 72px;
+  --tap-min: 44px;
+  --header-h: 56px;
+  /* Where content begins inside the scroll area. Screens with a header start
+     tighter because the header already carries the top weight. */
+  --scroll-top: 32px;
+  --scroll-top-bare: 44px;
+  --cta-h: 100px;  /* 하단 고정 버튼 영역 */
+  --nav-h: 90px;
+  /* 내비의 '내용' 높이 = 1(윗선) + 10(윗여백) + 52(버튼 최소높이).
+     안전영역이 32px 보다 큰 기기에서는 이 값 + 인셋 이 내비 높이가 된다.
+     내비를 덮는 홈 소식 카드가 같은 식을 써야 둘이 항상 같은 높이가 된다. */
+  --nav-stack-h: 63px;  /* 안전영역까지 포함한 전체 높이 */  /* 내용상 실제 높이. .app-bottom-navigation 이 이 값을 min-height 로 쓴다 */
+
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 400ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Short handsets tighten the top step rather than each screen inventing its own. */
+@media (max-height: 812px) {
+  :root {
+    --scroll-top: 28px;
+    --scroll-top-bare: 36px;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100%;
+}
+
+html,
+body {
+  overflow: hidden;
+}
+
+#root {
+  background: var(--paper);
+}
+
+/* 바탕색(--bg-app)은 넓은 화면에서 390px 칼럼 바깥을 칠하는 '책상 매트'다.
+   그런데 폰에서는 칼럼이 화면을 꽉 채워 매트가 보일 자리가 없고,
+   대신 iOS 가 이 색으로 status bar 띄를 칠해 본문과 다른 회색 띄가 생겼다.
+   좋은 화면에서만 본문 종이색으로 바꾼다. statusBarColor.ts 가
+   화면별로 이 값을 다시 덮어쓴다(매트 배경인 편지 읽기 등). */
+@media (max-width: 479px) {
+  body { background-color: var(--paper); }
+}
+
+body {
+  /* 100vh 는 키보드가 올라와도 줄지 않아, place-items:center 와 만나면
+     셸이 위아래로 밀려 헤더가 화면 밖으로 나간다. */
+  min-height: var(--app-viewport-height, 100dvh);
+  display: grid;
+  place-items: center;
+  background-color: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.mobile-prototype {
+  --page-enter-duration: 400ms;
+  --page-exit-duration: 180ms;
+  --page-enter-distance: 8px;
+  width: 100vw;
+  /* 키보드가 올라오면 dvh 는 그대로여서 실제 보이는 높이와 어긋난다.
+     viewport.ts 가 내려주는 실측값을 쓰고, 없으면 dvh 로 돌아간다. */
+  height: var(--app-viewport-height, 100dvh);
+  margin-inline: auto;
+  overflow: hidden;
+  position: relative;
+  background: var(--paper);
+  /* 자간 기준값 — 한글은 기본 자간이 헐거워 UI 텍스트가 성글게 보인다.
+     명시값이 있는 요소(제목·라벨 등)는 그대로 이기므로 미지정분만 채워진다. */
+  letter-spacing: var(--ls-body);
+  /* 한글 줄바꿈 — keep-all 은 어절 단위로 끊고, overflow-wrap 은 한 단어가
+     아예 안 들어갈 때만 쪼갠다. 둘을 같이 써야 12자 닉네임처럼 띄어쓰기 없는
+     긴 문자열에서 가로로 넘치지 않는다. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* On a desktop viewport the app keeps its phone frame so the prototype stays
+   reviewable; on any phone-width screen it fills the device instead, otherwise
+   a 430x932 handset leaves a dead band under the bottom navigation. */
+@media (min-width: 480px) {
+  .mobile-prototype {
+    width: 390px;
+    height: min(var(--app-viewport-height, 100dvh), 844px);
+  }
+}
+
