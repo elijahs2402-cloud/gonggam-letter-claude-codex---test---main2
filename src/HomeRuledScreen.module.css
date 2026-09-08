@@ -119,6 +119,11 @@
   }
   .choices { margin-top: 28px; }
   .choice { min-height: 210px; padding-bottom: 28px; }
+  .icon {
+    width: 42px;
+    height: 36px;
+    margin-bottom: 16px;
+  }
   .arrow { position: static; margin-top: 32px; }
   .screen :global(.home-brand) { font-size: 14px; letter-spacing: 1.4px; }
   .screen :global(.home-heading h1) { font-size: 26px; line-height: 1.42; }
