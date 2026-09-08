@@ -7186,6 +7186,13 @@ html[data-ios-standalone="true"] .intro-copy {
 .reply-compose textarea { min-height: 240px; }
 .reply-compose small { display: block; margin-top: 7px; color: var(--muted-ink); font-size: 12px; text-align: right; }
 .reply-review-guidance { margin-top: 38px; margin-left: 10px; padding-top: 25px; border-top: 1px solid rgba(var(--gold-rgb), var(--a40)); }
+.preview-safety-warning { display: grid; gap: 4px; margin: 0 0 22px; padding: 12px 14px; border-left: 2px solid var(--status-error-text); background: rgba(var(--terracotta-rgb), var(--a10)); color: var(--status-error-text); font-size: 12px; line-height: 1.6; }
+.preview-safety-warning strong { font-weight: 600; }
+.preview-safety-warning span { color: var(--status-error-text); }
+.letter-preview-screen .flow-letter-paper--with-safety-warning { padding-top: 146px; }
+.letter-preview-screen .flow-letter-paper--with-safety-warning > .preview-safety-warning { position: absolute; z-index: 1; top: 22px; right: 24px; left: 24px; margin: 0; }
+.letter-preview-screen .flow-letter-paper--with-safety-warning > .my-letter-waiting-quote--open { top: 107px; }
+.preview-safety-highlight { padding: 1px 2px; background: rgba(var(--terracotta-rgb), var(--a15)); color: inherit; }
 .reply-review-guidance h2 { margin: 0; color: #4b433d; font-family: var(--font-serif); font-size: 14px; font-weight: 600; line-height: 1.45; letter-spacing: -0.03em; }
 .reply-review-edited-at { display: block; margin-top: 20px; color: #9a9083; font-family: var(--font-sans); font-size: 12px; font-weight: 500; line-height: 1.6; }
 .flow-review .reply-review-guidance .review-list { margin: 18px 0 0; border-top: 0; }

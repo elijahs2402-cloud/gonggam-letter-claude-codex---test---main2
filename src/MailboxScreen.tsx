@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { navigateTo } from "./navigation";
+import { getCurrentAppSearchParams, navigateTo } from "./navigation";
 import { AppBottomNavigation } from "./AppBottomNavigation";
 import { getCurrentUserId, getLettersRepliedByUser, getMyLetters, type Letter } from "./letters";
 import { getSentLetterDisplayStatus, sortSentLettersByActivity } from "./mailboxStatus";
@@ -22,6 +22,7 @@ export function MailboxNavigation({ onUnavailable }: { onUnavailable: (label: st
 
 export function MailboxScreen() {
   const userId = getCurrentUserId();
+  const isContentPreview = getCurrentAppSearchParams().get("preview") === "content";
   const myLetters = sortSentLettersByActivity(getMyLetters(userId), userId);
   const repliedLetters = getLettersRepliedByUser(userId);
   const records = [
@@ -31,7 +32,7 @@ export function MailboxScreen() {
     // 그 행들은 href 가 모두 /mailbox-demo 라 눌러도 자기 상세로 가지 못했다.
     // 실제 편지만 보여주고, 화면을 채울 표본은 저장소에 심어 쓴다.
   ].sort((left, right) => right.activityAt.localeCompare(left.activityAt));
-  return <MailboxCollection records={records} illustrationVariant="directional-status-inline" />;
+  return <MailboxCollection records={isContentPreview ? getMailboxDemoRecords("/mailbox?preview=content") : records} isDemo={isContentPreview} illustrationVariant="directional-status-inline" />;
 }
 
 export function MailboxDemoScreen() {
@@ -68,9 +69,9 @@ export function MailboxDemoUploadedIconSetScreen() {
 
 function getMailboxDemoRecords(href: string): UnifiedMailboxRecord[] {
   return [
-    { id: "demo-waiting-1", href, status: "waiting", label: "기다리는 중", nickname: "마음의온기를나누는한사람", activityAt: "2026-08-25T09:00:00.000Z" , preview: "며칠째 같은 생각이 맴돌아 편지를 남깁니다."},
+    { id: "demo-waiting-1", href: "/mailbox-my-waiting-demo", status: "waiting", label: "기다리는 중", nickname: "마음의온기를나누는한사람", activityAt: "2026-08-25T09:00:00.000Z" , preview: "며칠째 같은 생각이 맴돌아 편지를 남깁니다."},
     { id: "demo-arrived-1", href, status: "arrived", label: "답장 도착", nickname: "비오는날창가에앉은고양이", activityAt: "2026-08-24T12:30:00.000Z", isUnread: true },
-    { id: "demo-sent-1", href, status: "sent", label: "답장 보냄", nickname: "따뜻한차한잔을건네는마음", activityAt: "2026-08-23T16:20:00.000Z" , preview: "당신의 이야기를 천천히 읽었어요."},
+    { id: "demo-sent-1", href: "/mailbox-replied-demo", status: "sent", label: "답장 보냄", nickname: "따뜻한차한잔을건네는마음", activityAt: "2026-08-23T16:20:00.000Z" , preview: "당신의 이야기를 천천히 읽었어요."},
     { id: "demo-waiting-2", href, status: "waiting", label: "기다리는 중", nickname: "새벽공기를좋아하는한사람", activityAt: "2026-08-22T10:10:00.000Z" , preview: "괜찮다고 말해왔는데, 사실은 아니었어요."},
     { id: "demo-arrived-2", href, status: "arrived", label: "답장 도착", nickname: "오늘도천천히걷는한마음씨", activityAt: "2026-08-21T08:40:00.000Z", isUnread: true },
   ];

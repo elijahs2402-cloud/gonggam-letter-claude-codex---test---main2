@@ -49,6 +49,8 @@ import {
   LetterWithdrawnScreen,
   MyLetterDetailScreen,
   MyLetterRepliedDemoScreen,
+  MyLetterWaitingDemoScreen,
+  RepliedLetterDemoScreen,
   ReaderPromiseScreen,
   AssignedLetterFlowScreen,
   ReadLetterFlowScreen,
@@ -513,6 +515,8 @@ export function App() {
   if (path.startsWith("/reply-arrived/")) return <ReplyArrivedScreen letterId={decodeURIComponent(path.slice("/reply-arrived/".length))} />;
   if (path.startsWith("/letter-withdrawn/")) return <LetterWithdrawnScreen letterId={decodeURIComponent(path.slice("/letter-withdrawn/".length))} />;
   if (path === "/mailbox-my-replied-demo") return <MyLetterRepliedDemoScreen />;
+  if (path === "/mailbox-my-waiting-demo") return <MyLetterWaitingDemoScreen />;
+  if (path === "/mailbox-replied-demo") return <RepliedLetterDemoScreen />;
   if (path.startsWith("/mailbox/my/")) return <MyLetterDetailScreen letterId={decodeURIComponent(path.slice("/mailbox/my/".length))} />;
   if (path.startsWith("/mailbox/replied/")) return <RepliedLetterDetailScreen letterId={decodeURIComponent(path.slice("/mailbox/replied/".length))} />;
   if (path === "/write-letter-a") return <WriteLetterAScreen />;
