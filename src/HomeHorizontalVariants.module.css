@@ -1,0 +1,91 @@
+.screen {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(rgba(var(--paper-rgb), var(--a50)), rgba(var(--paper-rgb), var(--a50))),
+    url("/assets/paper-pattern.jpg");
+  background-position: center top;
+  background-size: auto, 650px auto;
+}
+
+.scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+.topbar {
+  /* /home의 .home-heading-top이 헤더 높이·안전영역·브랜드 규격을 맡는다. */
+}
+
+.heading {
+  /* 헤더 타이포와 인사말은 /home의 전역 규칙을 그대로 쓴다. */
+}
+
+.choices { display: grid; gap: 12px; margin-top: 28px; }
+
+.card {
+  position: relative;
+  min-height: 196px;
+  overflow: hidden;
+  border: var(--frame-mat-width) solid rgba(var(--surface-card-rgb), var(--a95));
+  background: var(--surface-card);
+  box-shadow: inset 0 0 0 1px var(--frame-rule);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.card:focus-visible { outline: 2px solid var(--deep-plum); outline-offset: -3px; }
+.copy { position: relative; z-index: 1; display: block; max-width: 52%; }
+.copy small { display: block; color: #847358; font-family: var(--font-serif); font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+.copy small::after { display: none; }
+.copy strong { display: block; margin-top: 12px; font-family: var(--font-serif); font-size: 18px; font-weight: 600; line-height: 1.46; letter-spacing: -0.035em; }
+.copy > span { display: block; margin-top: 11px; color: var(--muted-ink); font-size: 12px; line-height: 1.6; letter-spacing: -0.03em; }
+.copy i { display: block; width: 35px; height: 14px; margin-top: 17px; overflow: hidden; background: #968c82; color: transparent; font-size: 0; font-style: normal; -webkit-mask: url("/assets/nav-go-arrow.svg") center / contain no-repeat; mask: url("/assets/nav-go-arrow.svg") center / contain no-repeat; }
+.card img { position: absolute; right: 8px; bottom: 10px; width: 48%; height: 68%; object-fit: contain; object-position: right bottom; pointer-events: none; }
+
+.band .choices { gap: 1px; margin-right: calc(var(--gutter) * -1); margin-left: calc(var(--gutter) * -1); }
+.band .card { min-height: 210px; padding: 20px var(--gutter); border-right: 0; border-left: 0; border-color: rgba(var(--surface-card-rgb), var(--a95)); background: rgba(var(--surface-card-rgb), var(--a72)); box-shadow: inset 0 1px 0 var(--frame-rule), inset 0 -1px 0 var(--frame-rule); }
+.band .write { background: rgba(var(--surface-card-rgb), var(--a72)); }
+.band .read { background: rgba(var(--surface-card-rgb), var(--a60)); }
+.band .read .copy { margin-left: auto; }
+.band .read img { right: auto; bottom: 10px; left: 8px; }
+.band .read .copy i { text-align: right; }
+
+.frame .choices { gap: 14px; }
+.frame .card { min-height: 210px; padding: 20px 17px; background: rgba(var(--surface-card-rgb), var(--a72)); }
+.frame .copy strong { margin-top: 0; }
+.frame .copy > span { margin-top: 14px; }
+.frame .copy i { margin-top: 24px; }
+.frame .write img {
+  right: 28px;
+  bottom: 10px;
+  width: 49%;
+  height: 70%;
+  object-position: right bottom;
+}
+.frame .read img {
+  right: auto;
+  bottom: 10px;
+  left: 28px;
+  width: 49%;
+  height: 70%;
+  object-position: left bottom;
+}
+.frame .read .copy { margin-left: auto; transform: translateX(10px); }
+.frame .read .copy i { text-align: right; }
+
+.tagline { margin-top: auto; }
+
+@media (max-width: 360px) {
+  .card { min-height: 190px; }
+  .copy strong { margin-top: 16px; font-size: 20px; }
+  .copy > span { margin-top: 12px; font-size: 12px; }
+  .copy i { margin-top: 12px; }
+}
