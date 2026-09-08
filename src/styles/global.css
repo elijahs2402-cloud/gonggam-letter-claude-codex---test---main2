@@ -359,7 +359,7 @@
 .notification-row { width: 100%; min-height: 92px; padding: 16px 3px 15px 15px; position: relative; display: grid; grid-template-columns: 8px minmax(0,1fr) 14px; gap: 8px; align-items: center; border: 0; border-bottom: 1px solid rgba(var(--ink-rgb), var(--a15)); background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
 .notification-row.is-unread { background: rgba(226, 215, 235, var(--a33)); }.notification-row-dot { width: 5px; height: 5px; border-radius: 50%; background: transparent; }.notification-row.is-unread .notification-row-dot { background: var(--deep-plum); }
 .notification-row-copy { min-width: 0; display: grid; gap: 5px; }.notification-row-copy strong { font-family: var(--font-serif); font-size: var(--fs-body-sm); font-weight: 600; letter-spacing: -0.03em; }.notification-row-copy > span { color: var(--muted-ink); font-size: 12px; line-height: 1.55; }.notification-row-copy time { color: var(--faint-ink); font-size: 12px; }.notification-row > i { color: var(--plum); font-style: normal; font-size: 18px; }
-.notification-empty { min-height: 430px; display: grid; justify-items: center; align-content: center; text-align: center; }.notification-empty h1 { margin: 0; font-family: var(--font-serif); font-size: var(--fs-state-title); font-weight: var(--fw-title); letter-spacing: -0.035em; }.notification-empty p { margin: 14px 0 25px; max-width: 230px; color: var(--muted-ink); font-size: var(--fs-body-sm); line-height: 1.7; }.notification-empty button { min-width: 160px; }
+.notification-empty { min-height: 430px; display: grid; justify-items: center; align-content: center; text-align: center; }.notification-empty h1 { margin: 0; font-family: var(--font-serif); font-size: var(--fs-state-title); font-weight: var(--fw-title); letter-spacing: -0.035em; }.notification-empty p { margin: 14px 0 25px; max-width: 230px; color: var(--muted-ink); font-size: var(--fs-body-sm); line-height: 1.7; }.notification-empty button { min-width: 180px; }
 .notification-test { margin-top: 26px; }.notification-test summary { cursor: pointer; color: var(--deep-plum); font-size: 12px; font-weight: 700; }.notification-test div { flex-wrap: wrap; margin-top: 7px; }.notification-test button { flex: 0 0 auto; padding: 0 7px; }
 .notification-setting-intro h1 { margin: 0; font-family: var(--font-serif); font-size: var(--fs-title); font-weight: var(--fw-title); line-height: var(--lh-title); letter-spacing: var(--ls-title); }.notification-setting-intro p { margin: 15px 0 28px; color: var(--muted-ink); font-size: 12px; line-height: 1.75; }
 .push-guide-card, .push-denied-note { margin-bottom: 23px; padding: 17px; border: 1px solid var(--frame-rule); background: rgba(var(--white-rgb), var(--a40)); }.push-guide-card strong, .push-denied-note strong { font-family: var(--font-serif); font-size: 14px; font-weight: 600; letter-spacing: -0.03em; }.push-guide-card p, .push-denied-note p { margin: 9px 0 15px; color: var(--muted-ink); font-size: 12px; line-height: 1.65; }.push-guide-card .flow-secondary-button { width: 100%; min-height: 40px; font-size: 12px; }.push-guide-card .flow-text-button { width: 100%; }.push-denied-note { border-left: 2px solid var(--gold); }.push-denied-note button { border: 0; background: transparent; color: var(--deep-plum); font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }.push-granted-note { margin: 0 0 18px; padding-left: 10px; border-left: 2px solid rgba(var(--sage-rgb), var(--a72)); color: var(--status-success-text); font-size: 12px; }
@@ -7998,8 +7998,10 @@ html[data-ios-standalone="true"] .intro-copy {
 .auth-primary-button,
 .emotion-primary-button,
 .letter-flow-fixed-action .letter-button--primary,
-.home-empty-letter > button {
-  border: 1px solid var(--action-primary);
+.home-empty-letter > button,
+.home-priority-card > button:not(.flow-text-button),
+.home-progress-card > button {
+  border: 0;
   background: var(--action-primary);
   color: var(--action-on-primary);
   box-shadow: none;

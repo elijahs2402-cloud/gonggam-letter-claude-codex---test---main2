@@ -53,8 +53,8 @@ function excerpt(value: string, length = 92) {
   return normalized.length > length ? `${normalized.slice(0, length)}…` : normalized;
 }
 
-function MissingLetterScreen({ fallback = "/mailbox" }: { fallback?: string }) {
-  return <FocusShell title="편지" fallback={fallback}><section className="flow-message"><h1>편지를 찾을 수 없어요</h1><p>다시 편지함에서 확인해주세요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/mailbox")}>편지함으로 가기</button></section></FocusShell>;
+function MissingLetterScreen({ fallback = "/mailbox", title = "편지" }: { fallback?: string; title?: string }) {
+  return <FocusShell title={title} fallback={fallback}><section className="flow-message"><h1>편지를 찾을 수 없어요</h1><p>다시 편지함에서 확인해주세요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/mailbox")}>편지함 가기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></FocusShell>;
 }
 
 function DraftExitDialog({ kind, onContinue, onSaveAndLeave, onDiscardAndLeave, isSaving = false }: { kind: "letter" | "reply"; onContinue: () => void; onSaveAndLeave: () => void; onDiscardAndLeave: () => void; isSaving?: boolean }) {
@@ -155,7 +155,7 @@ export function LetterPreviewScreen() {
 export function LetterSentScreen({ letterId }: { letterId?: string }) {
   const letter = letterId ? getLetterById(letterId) : undefined;
   if (!letter) return <MissingLetterScreen fallback="/mailbox" />;
-  return <FocusShell title="발송 완료" fallback="/home" hideBack><section className="flow-complete"><img src="/assets/reply-sent-lavender-envelope.png" alt="봉인된 편지 봉투" /><h1>편지를 보냈어요</h1><p>오늘 쓴 한 통이 누군가에게 가는 중이에요.</p><div><button className="flow-primary-button" type="button" onClick={() => navigateTo("/mailbox")}>편지함 가기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로</button></div></section></FocusShell>;
+  return <FocusShell title="발송 완료" fallback="/home" hideBack><section className="flow-complete"><img src="/assets/reply-sent-lavender-envelope.png" alt="봉인된 편지 봉투" /><h1>편지를 보냈어요</h1><p>오늘 쓴 한 통이 누군가에게 가는 중이에요.</p><div><button className="flow-primary-button" type="button" onClick={() => navigateTo("/mailbox")}>편지함 가기</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></div></section></FocusShell>;
 }
 
 export function WaitingLettersScreen() {
@@ -227,9 +227,9 @@ export function ReadLetterFlowScreen({ letterId, assignedReaderMode = false }: {
   const letter = letterId ? getLetterById(letterId) : undefined;
   const isBlockedContentPreview = getCurrentAppSearchParams().get("preview") === "blocked-content";
   if (isBlockedContentPreview) return <FocusShell title="편지 읽기" fallback="/home" hideBack><section className="flow-message"><h1>차단한 사용자의 콘텐츠예요</h1><p>안전을 위해 이 내용은 기본적으로 숨겨져 있어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/safety-management")}>차단 내역 확인</button><button className="flow-text-button" type="button" onClick={() => navigateTo("/home")}>홈으로 돌아가기</button></section></FocusShell>;
-  if (!letter) return <MissingLetterScreen fallback="/home" />;
-  if (assignedReaderMode && (letter.assignedReaderId !== getCurrentUserId() || !["assigned", "read", "waiting_for_reply"].includes(letter.status) || getLetterReturn(letter.id, getCurrentUserId()))) return <MissingLetterScreen fallback="/home" />;
-  if (letter.senderId === getCurrentUserId()) return <MissingLetterScreen fallback="/home" />;
+  if (!letter) return <MissingLetterScreen fallback="/home" title="편지 읽기" />;
+  if (assignedReaderMode && (letter.assignedReaderId !== getCurrentUserId() || !["assigned", "read", "waiting_for_reply"].includes(letter.status) || getLetterReturn(letter.id, getCurrentUserId()))) return <MissingLetterScreen fallback="/home" title="편지 읽기" />;
+  if (letter.senderId === getCurrentUserId()) return <MissingLetterScreen fallback="/home" title="편지 읽기" />;
   if (letter.prototypeWaitingScenario === "returned") return <FocusShell title="편지 읽기" fallback="/home"><section className="flow-message"><h1>{RETURNED_LETTER_TITLE}</h1><p>{RETURNED_LETTER_BODY}</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(getListenEntryPath(getCurrentUserId()))}>다른 편지 만나기</button></section></FocusShell>;
   if (letter.prototypeWaitingScenario === "blocked") return <FocusShell title="편지 읽기" fallback="/home"><section className="flow-message"><h1>차단한 사용자와 연결된 편지예요</h1><p>안전을 위해 이 내용은 확인할 수 없어요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(getListenEntryPath(getCurrentUserId()))}>다른 편지 만나기</button></section></FocusShell>;
   if (letter.prototypeWaitingScenario === "deleted") return <FocusShell title="편지 읽기" fallback="/home"><section className="flow-message"><h1>이 편지를 찾을 수 없어요</h1><p>지워졌거나, 더는 열어볼 수 없는 편지예요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo(getListenEntryPath(getCurrentUserId()))}>다른 편지 만나기</button></section></FocusShell>;
@@ -611,7 +611,7 @@ export function MyLetterDetailScreen({ letterId }: { letterId?: string }) {
   const letter = letterId ? getLetterById(letterId) : undefined;
   if (!letter || letter.senderId !== getCurrentUserId()) return <MissingLetterScreen />;
   const userId = getCurrentUserId(); const params = getCurrentAppSearchParams(); const showReply = params.get("reply") === "1" || Boolean(params.get("excerpt")); const replyHidden = Boolean(letter.reply && isContentHidden(userId, "reply", letter.reply.id)); const replyBlocked = Boolean(letter.reply && isUserBlocked(userId, letter.reply.writerId)); const focusExcerptId = params.get("excerpt") ?? undefined; const display = getSentLetterDisplayStatus(letter, userId);
-  if (display.isDeleted) return <FocusShell title="내가 보낸 편지" fallback="/mailbox"><section className="flow-message"><h1>이 편지를 찾을 수 없어요</h1><p>지워졌거나, 더는 열어볼 수 없는 편지예요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/mailbox")}>편지함으로 돌아가기</button></section></FocusShell>;
+  if (display.isDeleted) return <FocusShell title="내가 보낸 편지" fallback="/mailbox"><section className="flow-message"><h1>이 편지를 찾을 수 없어요</h1><p>지워졌거나, 더는 열어볼 수 없는 편지예요.</p><button className="flow-primary-button" type="button" onClick={() => navigateTo("/mailbox")}>편지함 가기</button></section></FocusShell>;
   // 답장이 도착한 편지 — 설계된 화면(내가 답한 편지의 짝)으로 보여준다.
   // 예전에는 옛 레이아웃(상태 표 + '받은 답장 보기' 버튼)으로 빠졌고,
   // 설계본은 /mailbox-my-replied-demo 에 내용이 박힌 데모로만 있었다.

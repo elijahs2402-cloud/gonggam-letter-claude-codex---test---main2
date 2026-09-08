@@ -468,6 +468,8 @@ export function App() {
   if (path === "/letter-preview") return <LetterPreviewScreen />;
   if (path === "/letter-safety-review") return <LetterSafetyReviewScreen />;
   if (path.startsWith("/gratitude/")) return <GratitudeScreen letterId={decodeURIComponent(path.slice("/gratitude/".length))} />;
+  if (path === "/report-reply-demo") return <ReplyReportScreen existingDemo />;
+  if (path === "/report-reply-complete-demo") return <ReplyReportScreen completeDemo />;
   if (path.startsWith("/report-reply/")) {
     const suffix = path.slice("/report-reply/".length);
     const isComplete = suffix.endsWith("/complete");

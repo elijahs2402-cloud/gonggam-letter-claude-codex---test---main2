@@ -35,7 +35,7 @@ export function AccountSettingsScreen({ stageClassName = "" }: { stageClassName?
   const account = getMockAuthSnapshot().account;
   const [confirmLogout, setConfirmLogout] = useState(false);
   const logout = () => { logoutMockAccount(); navigateTo("/login?notice=logged-out"); };
-  const emailAddress = account?.authProvider === "apple" ? "vk7yws7m28@privaterelay.appleid.com" : "이메일 정보는 저장하지 않아요";
+  const emailAddress = account?.authProvider === "apple" ? "vk7yws7m28@privaterelay.appleid.com" : account?.authProvider === "kakao" ? "토스 계정으로 로그인" : "이메일 정보는 저장하지 않아요";
   const connectedAccountName = account?.authProvider === "apple" ? "애플" : providerName(account?.authProvider);
   // 계정 삭제 화면(이유 선택 단계)의 ← 로 돌아온 경우에만 pop-in 을 쓴다.
   const [enteredViaPop] = useState(consumePopEntry);
