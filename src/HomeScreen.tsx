@@ -26,6 +26,7 @@ type FloatingNotice = {
   onAction: () => void
   /** 있으면 제목 아래에 남은 시간을 1초 단위로 함께 보여준다. */
   deadline?: number
+  isUrgent?: boolean
   /**
    * 언제 다시 안 보이게 할지.
    *  - "session": 한 번의 접속에서 한 번만 보인다. 접속을 새로 하면 다시 뜬다.
@@ -92,7 +93,7 @@ function formatRemaining(ms: number) {
  * 사용자에게는 소음이 된다. 대신 남은 시간을 문장으로 담은 aria-label 을
  * 한 번만 준다.
  */
-function ReplyCountdown({ deadline }: { deadline: number }) {
+function ReplyCountdown({ deadline, isUrgent = false }: { deadline: number; isUrgent?: boolean }) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     if (deadline - Date.now() <= 0) return
@@ -107,10 +108,10 @@ function ReplyCountdown({ deadline }: { deadline: number }) {
   const text = formatRemaining(remaining)
   return (
     <span
-      className="home-notice-countdown"
+      className={`home-notice-countdown${isUrgent ? " is-over" : ""}`}
       aria-label={`답장할 수 있는 시간이 ${text} 남았어요`}
     >
-      <span aria-hidden="true">{text} 남음</span>
+      <span aria-hidden="true">{isUrgent ? `곧 사라져요 · ${text} 남음` : `${text} 남음`}</span>
     </span>
   )
 }
@@ -270,9 +271,45 @@ function HomeContent({
       hideAfter: "forever",
     })
 
+  // 하단 소식 토스트를 데이터 준비 없이 검토할 수 있는 임시 상태.
+  // 실제 소식 로직에는 영향을 주지 않고, preview 쿼리가 있을 때만 우선한다.
+  const noticePreview = new URLSearchParams(window.location.search).get("preview")
+  const previewNotice: FloatingNotice | undefined =
+    noticePreview === "notice-assigned"
+      ? {
+          id: "preview-assigned",
+          title: "맡은 편지에 답장을 전해주세요.",
+          description: "당신의 한마디를 기다리고 있어요.",
+          deadline: Date.now() + 2 * 24 * 60 * 60 * 1000,
+          action: "답장 쓰기",
+          onAction: () => navigateTo("/write-reply/sample-waiting-letter-one"),
+          hideAfter: "session",
+        }
+      : noticePreview === "notice-expiring"
+        ? {
+            id: "preview-expiring",
+            title: "맡은 편지에 답장을 전해주세요.",
+            description: "답장할 수 있는 시간이 얼마 남지 않았어요.",
+            deadline: Date.now() + 15 * 60 * 1000,
+            isUrgent: true,
+            action: "답장 쓰기",
+            onAction: () => navigateTo("/write-reply/sample-waiting-letter-one"),
+            hideAfter: "session",
+          }
+        : noticePreview === "notice-reply-arrived"
+          ? {
+              id: "preview-reply-arrived",
+              title: "답장이 도착했어요.",
+              description: "편지함에서 확인할 수 있어요.",
+              action: "편지함 가기",
+              onAction: () => navigateTo("/mailbox"),
+              hideAfter: "forever",
+            }
+          : undefined
+
   // 이 화면에서 방금 닫은 것들. 하나를 닫으면 다음 순위가 이어서 뜬다.
   const [dismissedNow, setDismissedNow] = useState<string[]>([])
-  const notice = candidates.find(
+  const notice = previewNotice ?? candidates.find(
     (item) =>
       !dismissedNow.includes(item.id) &&
       (item.hideAfter === "forever"
@@ -366,8 +403,9 @@ function HomeContent({
             <span className="home-notice-copy">
               <strong>{notice.title}</strong>
               {notice.deadline !== undefined && (
-                <ReplyCountdown deadline={notice.deadline} />
+                <ReplyCountdown deadline={notice.deadline} isUrgent={notice.isUrgent} />
               )}
+              {notice.deadline === undefined && <span className="home-notice-countdown home-notice-countdown--placeholder" aria-hidden="true">시간 여백</span>}
             </span>
             <button
               type="button"

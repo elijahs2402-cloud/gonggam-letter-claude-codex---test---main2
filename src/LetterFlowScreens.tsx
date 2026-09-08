@@ -210,6 +210,7 @@ function ensureWaitingListTestLetters(userId: string) {
 오늘만은 누군가에게 조용히 마음을 건네고 싶었어요.`;
   const scenarios = [
     { id: "waiting-inline-test-short", anonymousName: "고요한 구름", content: "오늘은 누군가에게 조용히 마음을 건네고 싶었어요.", hours: 2 },
+    { id: "waiting-inline-test-ten-character", anonymousName: "별빛을닮은고요한새벽", content: "오늘은 누군가에게 조용히 마음을 건네고 싶었어요.", hours: 2 },
     { id: "waiting-inline-test-long", anonymousName: "느린 별빛", content: "요즘은 누구에게도 쉽게 말하지 못한 생각이 자꾸 마음에 남아요. 누군가가 판단하지 않고 끝까지 읽어준다면 조금 괜찮아질 것 같아요. 그래서 이 편지에 천천히 마음을 남겨봅니다.", hours: 53 },
     { id: "waiting-inline-test-special", anonymousName: "따뜻한 달빛", content: "오늘은 조금 복잡해요… 그래도 괜찮아질 거예요. ☁︎", hours: 120 },
   ];
@@ -312,7 +313,7 @@ export function ReadLetterFlowScreen({ letterId, assignedReaderMode = false }: {
   //  · 편지 만나기는 새 편지를 받는 관문이라, 이미 편지를 든 사람을 그리로 보내면
   //    한 통 더 받으라는 뜻으로 읽힌다.
   //  · 편지 만나기 자신의 뒤로가기도 홈이다. 한 단계를 건너뛸 뿐 방향은 어긋나지 않는다.
-  return <FocusShell title="편지 읽기" fallback="/home" className="letter-flow-screen--active-reader" scrollClassName="active-reading-scroll" action={<div className="flow-fixed-action flow-fixed-action--split"><button className="flow-secondary-button" type="button" onClick={() => setShowReturnSheet(true)}>안 받을게요</button><button className="flow-primary-button" type="button" onClick={startReply}>{hasReplyDraft ? "답장 이어 쓰기" : "이 편지에 답장하기"}</button></div>}><section className="active-reading-room" aria-label="조용한 편지 읽기 공간"><div className="active-reading-room-copy"><p className="active-reading-kicker"><time dateTime={letter.createdAt}>{formatLetterReadTime(letter.createdAt)}</time></p><h1><strong>{letter.anonymousName}</strong>님이<br />보낸 편지</h1></div><img src="/assets/read-letter-room-framed-two-trimmed.png" alt="" aria-hidden="true" /></section><div className="active-reading-mat"><article className="active-reading-paper"><span className="active-reading-quote active-reading-quote--open" aria-hidden="true">“</span><blockquote>{letter.content}</blockquote><span className="active-reading-quote active-reading-quote--close" aria-hidden="true">”</span><div className="active-reading-report-area"><button className="flow-text-button active-reading-report" type="button" onClick={() => navigateTo(`/report-letter/${encodeURIComponent(letter.id)}`)}>신고하기</button></div></article></div><section className="active-reading-helper"><img src="/assets/home-cards-ornaments-01.svg" alt="" aria-hidden="true" /><p><strong>당신의 마음을 전해주세요</strong><span>짧은 한마디도 누군가에게 힘이 될 수 있어요.</span></p></section>{showReturnSheet && <LetterReturnSheet hasDraft={hasReplyDraft} onCancel={() => setShowReturnSheet(false)} onConfirm={() => continueTo("return")} />}</FocusShell>;
+  return <FocusShell title="편지 읽기" fallback="/home" className="letter-flow-screen--active-reader" scrollClassName="active-reading-scroll" action={<div className="flow-fixed-action flow-fixed-action--split"><button className="flow-secondary-button" type="button" onClick={() => setShowReturnSheet(true)}>안 받을게요</button><button className="flow-primary-button" type="button" onClick={startReply}>{hasReplyDraft ? "답장 이어 쓰기" : "이 편지에 답장하기"}</button></div>}><section className="active-reading-room" aria-label="조용한 편지 읽기 공간"><div className="active-reading-room-copy"><h1><strong>{letter.anonymousName}</strong>님이<br />보낸 편지</h1><p className="active-reading-kicker"><time dateTime={letter.createdAt}>{formatLetterReadTime(letter.createdAt)}</time></p></div><img src="/assets/read-letter-room-framed-two-trimmed.png" alt="" aria-hidden="true" /></section><div className="active-reading-mat"><article className="active-reading-paper"><span className="active-reading-quote active-reading-quote--open" aria-hidden="true">“</span><blockquote>{letter.content}</blockquote><span className="active-reading-quote active-reading-quote--close" aria-hidden="true">”</span><div className="active-reading-report-area"><button className="flow-text-button active-reading-report" type="button" onClick={() => navigateTo(`/report-letter/${encodeURIComponent(letter.id)}`)}>신고하기</button></div></article></div><section className="active-reading-helper"><img src="/assets/home-cards-ornaments-01.svg" alt="" aria-hidden="true" /><p><strong>당신의 마음을 전해주세요</strong><span>짧은 한마디도 누군가에게 힘이 될 수 있어요.</span></p></section>{showReturnSheet && <LetterReturnSheet hasDraft={hasReplyDraft} onCancel={() => setShowReturnSheet(false)} onConfirm={() => continueTo("return")} />}</FocusShell>;
 }
 
 export function AssignedLetterFlowScreen({ letterId }: { letterId?: string }) {
@@ -467,7 +468,7 @@ function ensureReplyReviewTestLetter(userId: string) {
   const letter: Letter = {
     id,
     senderId: "reply-review-test-sender",
-    anonymousName: "고요한 구름",
+    anonymousName: "별빛을닮은고요한새벽",
     content: "오늘은 마음이 조금 무거웠어요.\n누군가에게 조용히 이 이야기를 건네고 싶었어요.",
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,

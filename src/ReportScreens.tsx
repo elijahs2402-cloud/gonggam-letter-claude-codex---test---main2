@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { blockUser, getBlockedUsers, unblockUser } from "./blocks";
+import { blockUser, getBlockedUsers, unblockUser, type UserBlock } from "./blocks";
 import { hideContent } from "./contentVisibility";
 import { getCurrentUserId, getLetterById, getLetters } from "./letters";
 import { createReport, getReportForTarget, getReportsByUser, type Report, type ReportReason } from "./reports";
@@ -83,8 +83,15 @@ export function SafetyManagementScreen({ stageClassName = "" }: { stageClassName
   const userId = getCurrentUserId();
   const [refresh, setRefresh] = useState(0);
   const [confirm, setConfirm] = useState<string | undefined>();
-  const blocks = getBlockedUsers(userId);
-  const reports = getReportsByUser(userId);
+  const isContentPreview = new URLSearchParams(window.location.search).get("preview") === "content";
+  const previewBlocks: UserBlock[] = [{ id: "preview-block-1", blockerUserId: userId, blockedUserId: "preview-blocked-user", source: "letter_report", createdAt: "2026-09-07T09:00:00.000Z" }];
+  const previewReports: Report[] = [
+    { id: "preview-report-1", reporterId: userId, targetType: "letter", targetId: "preview-letter", reason: "abusive", createdAt: "2026-09-07T09:00:00.000Z", status: "reviewing", hiddenByReporter: true, blockedUserId: "preview-blocked-user" },
+    { id: "preview-report-2", reporterId: userId, targetType: "reply", targetId: "preview-reply", reason: "sexual", createdAt: "2026-09-05T09:00:00.000Z", status: "resolved", hiddenByReporter: false },
+  ];
+  const blocks = isContentPreview ? previewBlocks : getBlockedUsers(userId);
+  const reports = isContentPreview ? previewReports : getReportsByUser(userId);
+  const previewNames: Record<string, string> = { "preview-block-1": "달빛산책", "preview-report-1": "달빛산책", "preview-report-2": "고요한 구름" };
 
   return <Shell title="차단 및 신고 관리" fallback="/my-space" screenClassName={`safety-management-screen${stageClassName ? ` ${stageClassName}` : ""}`}>
     <section className="management-screen" data-refresh={refresh}>
@@ -97,7 +104,7 @@ export function SafetyManagementScreen({ stageClassName = "" }: { stageClassName
         </header>
         {blocks.length ? <ul className="management-record-list">
           {blocks.map((item) => <li key={item.id}>
-            <span className="management-record-copy"><strong>{blockedNickname(item.blockedUserId, reports)}</strong><small>{blockSource(item.source)} <i /> {managementDate(item.createdAt)}</small></span>
+            <span className="management-record-copy"><strong>{previewNames[item.id] ?? blockedNickname(item.blockedUserId, reports)}</strong><small>{blockSource(item.source)} <i /> {managementDate(item.createdAt)}</small></span>
             <button type="button" onClick={() => setConfirm(item.blockedUserId)}>차단 해제</button>
           </li>)}
         </ul> : <p className="management-empty">차단한 사용자가 없어요.</p>}
@@ -110,7 +117,7 @@ export function SafetyManagementScreen({ stageClassName = "" }: { stageClassName
         </header>
         {reports.length ? <ul className="management-record-list management-report-list">
           {reports.map((item) => <li key={item.id}>
-            <span className="management-record-copy"><strong>{reportedNickname(item)}</strong><small>{reasonLabels[item.reason] ?? "기타"} <i /> {managementDate(item.createdAt)}</small></span>
+            <span className="management-record-copy"><strong>{previewNames[item.id] ?? reportedNickname(item)}</strong><small>{reasonLabels[item.reason] ?? "기타"} <i /> {managementDate(item.createdAt)}</small></span>
             <em className={reportStatusTone(item.status)}>{reportStatus(item.status)}</em>
           </li>)}
         </ul> : <p className="management-empty">신고 내역이 없어요.</p>}

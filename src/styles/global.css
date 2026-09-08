@@ -7019,6 +7019,20 @@ html[data-ios-standalone="true"] .intro-copy {
 .write-letter-screen--figma .flow-header strong { color: var(--muted-ink); font: 600 18px/26px var(--font-sans); }
 .write-letter-screen--figma .letter-flow-scroll { padding: var(--scroll-top) var(--gutter) 24px; scroll-padding-bottom: 24px; }
 .write-letter-screen--figma .letter-compose-intro h1 { font-size: 28px; }
+.write-letter-screen--figma .letter-compose-intro {
+  min-height: 193px;
+  padding-right: 0;
+}
+.write-letter-screen--figma .letter-compose-intro p {
+  max-width: calc(100% - 116px);
+}
+.write-letter-screen--figma .letter-compose-intro img {
+  right: -2px;
+  bottom: -6px;
+  width: 168px;
+  height: 132px;
+  object-fit: contain;
+}
 .write-letter-screen--figma .letter-compose-guidance { box-sizing: border-box; margin: 28px 1px 0; padding: 17px 18px 18px; border-left: 3px solid rgba(var(--terracotta-rgb), var(--a85)); background: rgba(var(--paper-deep-rgb), var(--a50)); }
 .write-letter-screen--figma .letter-compose-guidance strong { display: flex; gap: 8px; color: var(--status-error-text); font-size: 14px; line-height: 21px; }
 .write-letter-screen--figma .letter-compose-guidance strong span { font: inherit; }
@@ -7140,6 +7154,32 @@ html[data-ios-standalone="true"] .intro-copy {
 .reply-compose-intro h1 strong { color: var(--action-primary); font-weight: var(--fw-name); }
 .reply-compose-intro p { margin: 14px 0 0; color: var(--muted-ink); font-family: var(--font-serif); font-size: var(--fs-caption); line-height: var(--lh-relaxed); letter-spacing: -0.035em; }
 .reply-compose-intro img { position: absolute; right: -2px; bottom: 21px; width: 125px; height: 98px; object-fit: contain; }
+
+/* 답장 쓰기 제목은 닉네임(최대 10자)이 포함된다. 그림 자리만큼 제목 폭을
+   미리 빼면 SE·S24에서 이름 중간이 끊어진다. 제목은 전체 폭을 쓰고, 그림과
+   겹치지 않도록 그림을 아래쪽으로 내리며 부제만 그림 폭을 피해 흐르게 한다. */
+.reply-compose-screen--figma .reply-compose-intro {
+  min-height: 193px;
+  padding-right: 0;
+}
+.reply-compose-screen--figma .reply-compose-intro h1 {
+  font-size: 24px;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+.reply-compose-screen--figma .reply-compose-intro p {
+  max-width: calc(100% - 116px);
+}
+.reply-compose-screen--figma .reply-compose-intro img {
+  right: -2px;
+  bottom: -6px;
+  width: 168px;
+  height: 132px;
+  object-fit: contain;
+}
+@media (max-width: 340px) {
+  .reply-compose-screen--figma .reply-compose-intro h1 { font-size: 21px; }
+}
 .reply-compose-meta { display: flex; align-items: baseline; column-gap: 12px; min-height: 18px; margin: 20px 8px 8px; }
 .flow-notice--reply { flex: 1 1 auto; min-height: 0; margin: 0; padding-right: 84px; color: #a15847; font-size: 12px; line-height: 18px; }
 .reply-compose-meta .draft-save-state { flex: 0 0 84px; min-height: 0; margin: 0 0 0 auto; color: var(--muted-ink); font-size: 12px; font-weight: 600; line-height: 18px; text-align: right; white-space: nowrap; }
@@ -7716,13 +7756,13 @@ html[data-ios-standalone="true"] .intro-copy {
 .letter-flow-screen--active-reader .active-reading-scroll { padding: 0 0 calc(118px + env(safe-area-inset-bottom)); }
 .letter-flow-screen--active-reader .flow-fixed-action { border-top-color: rgba(190, 151, 89, var(--a33)); }
 .active-reading-room { position: relative; min-height: 282px; overflow: hidden; padding: var(--scroll-top) var(--gutter) 14px; }
-.active-reading-room-copy { position: relative; z-index: 1; max-width: 70%; }
-.active-reading-kicker { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 8px; margin: 0 0 14px; color: #635549; font-family: var(--font-sans); font-size: 12px; line-height: var(--lh-snug); }
+.active-reading-room-copy { position: relative; z-index: 1; max-width: 100%; }
+.active-reading-kicker { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 8px; margin: 14px 0 0; color: #635549; font-family: var(--font-sans); font-size: 12px; line-height: var(--lh-snug); }
 .active-reading-kicker span { color: var(--action-primary); font-weight: 600; }
 .active-reading-kicker time { color: var(--faint-ink-on-mat); white-space: nowrap; }
-.active-reading-room h1 { margin: 0; color: #2f2925; font-family: var(--font-serif); font-size: var(--fs-title); font-weight: var(--fw-title); line-height: var(--lh-title); letter-spacing: var(--ls-title); }
+.active-reading-room h1 { margin: 0; color: #2f2925; font-family: var(--font-serif); font-size: var(--fs-title); font-weight: var(--fw-title); line-height: var(--lh-title); letter-spacing: var(--ls-title); white-space: nowrap; }
 .active-reading-room h1 strong { color: var(--action-primary); font-weight: var(--fw-name); }
-.active-reading-room img { position: absolute; right: 24px; bottom: 50px; width: 162px; max-width: 55%; height: auto; opacity: .64; pointer-events: none; }
+.active-reading-room img { position: absolute; right: 34px; bottom: 60px; width: 130px; max-width: 55%; height: auto; opacity: .64; pointer-events: none; }
 .letter-flow-screen--active-reader .flow-header,
 .active-reading-mat {
   background-color: var(--surface-mat);
@@ -8194,9 +8234,9 @@ html[data-ios-standalone="true"] .intro-copy {
   position: fixed;
   inset: 0;
   z-index: 60;
-  width: min(100vw, 390px);
-  height: min(var(--app-viewport-height, 100dvh), 844px);
-  margin: auto;
+  width: 100vw;
+  height: var(--app-viewport-height, 100dvh);
+  margin: 0;
   display: flex;
   align-items: flex-end;
   border: 0;
@@ -8204,6 +8244,16 @@ html[data-ios-standalone="true"] .intro-copy {
   background: rgba(var(--ink-rgb), var(--a40));
   /* 시트와 같은 420ms — 둘이 어긋나면 배경만 먼저 걷혀 시트가 떠 보인다. */
   animation: app-overlay-fade-in 420ms var(--ease-out) both;
+}
+
+/* 실제 휴대폰에서는 기기 뷰포트를 전부 덮는다. 데스크톱 검토 모드에서만
+   중앙의 390px 프로토타입 프레임 크기를 유지한다. */
+@media (min-width: 480px) {
+  .reply-source-backdrop {
+    width: 390px;
+    height: min(var(--app-viewport-height, 100dvh), 844px);
+    margin: auto;
+  }
 }
 
 .reply-source-sheet {
@@ -8218,7 +8268,11 @@ html[data-ios-standalone="true"] .intro-copy {
   /* iOS 홈 화면 앱에서는 시트가 상태바 뒤까지 차지한다. 고정 11px만 쓰면
      닫기 버튼이 시계·배터리 영역과 겹치므로 안전영역 아래에서 시작한다. */
   padding-top: calc(env(safe-area-inset-top, 0px) + 11px);
-  background: var(--paper-warm);
+  background-color: var(--paper-warm);
+  background-image:
+    linear-gradient(rgba(var(--paper-rgb), var(--a85)), rgba(var(--paper-rgb), var(--a85))),
+    url("/assets/paper-pattern.jpg");
+  background-size: auto, 650px;
   box-shadow: 0 -16px 46px rgba(61, 46, 36, .18);
   /* 나의 공간에서 확정한 전환(app-stage-enter-*)을 세로로 세워 쓴다.
      방향은 그대로 '아래에서 위로'다. 바뀐 것은 성격이다 —
@@ -8481,6 +8535,7 @@ html[data-ios-standalone="true"] .intro-copy {
   color: var(--terracotta);
   font-weight: var(--fw-nav);
 }
+.home-screen .home-notice-countdown--placeholder { visibility: hidden; }
 
 .home-screen .home-notice-action {
   grid-area: 1 / 2;

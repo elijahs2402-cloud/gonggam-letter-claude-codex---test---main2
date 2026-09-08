@@ -47,6 +47,15 @@ export function HomeRuledScreen() {
   // 그것과 아무 상관 없는 별도 저장소를 읽는다. 그래서 점을 보고 눌러도
   // '아직 새로운 알림이 없어요'만 나왔다.
   const hasUnreadNotifications = unreadNotificationCount(userId) > 0
+  const noticePreview = new URLSearchParams(window.location.search).get("preview")
+  const previewNotice =
+    noticePreview === "notice-assigned"
+      ? { title: "맡은 편지에 답장을 전해주세요.", time: "1일 23:59:59 남음", action: "답장 쓰기", onAction: () => navigateTo("/write-reply/sample-waiting-letter-one") }
+      : noticePreview === "notice-expiring"
+        ? { title: "맡은 편지에 답장을 전해주세요.", time: "곧 사라져요 · 00:15:00 남음", action: "답장 쓰기", onAction: () => navigateTo("/write-reply/sample-waiting-letter-one") }
+        : noticePreview === "notice-reply-arrived"
+          ? { title: "답장이 도착했어요.", time: undefined, action: "편지함 가기", onAction: () => navigateTo("/mailbox") }
+          : null
 
   return (
     <main className={`mobile-prototype home-screen home-ruled-screen ${styles.screen}`}>
@@ -61,6 +70,18 @@ export function HomeRuledScreen() {
           {hasUnreadNotifications && <i aria-hidden="true" />}
         </button>
       </div>
+
+      {previewNotice && (
+        <aside className="home-notice-card" role="status">
+          <button className="home-notice-dismiss" type="button" aria-label="소식 닫기" onClick={() => navigateTo("/home-ruled")}>×</button>
+          <span className="home-notice-copy">
+            <strong>{previewNotice.title}</strong>
+            {previewNotice.time && <span className={`home-notice-countdown${noticePreview === "notice-expiring" ? " is-over" : ""}`}>{previewNotice.time}</span>}
+            {!previewNotice.time && <span className="home-notice-countdown home-notice-countdown--placeholder" aria-hidden="true">시간 여백</span>}
+          </span>
+          <button className="home-notice-action" type="button" onClick={previewNotice.onAction}>{previewNotice.action}</button>
+        </aside>
+      )}
 
       <div
         className={`home-scroll-region ${styles.scroll}`}
@@ -100,17 +121,17 @@ export function HomeRuledScreen() {
           ))}
         </section>
 
-        <p className={`${styles.footer} ${styles.scrollFooter}`}>
-          <img src="/assets/decor-left.png" alt="" />
+      <p className={`${styles.footer} ${styles.scrollFooter}`}>
+          <img src="/assets/home-footer-star-divider1.svg" alt="" />
           <span>마음을 쓰고, 마음을 읽는 시간</span>
-          <img src="/assets/decor-right.png" alt="" />
+          <img src="/assets/home-footer-star-divider2.svg" alt="" />
         </p>
       </div>
 
       <p className={`${styles.footer} ${styles.fixedFooter}`}>
-        <img src="/assets/decor-left.png" alt="" />
+        <img src="/assets/home-footer-star-divider1.svg" alt="" />
         <span>마음을 쓰고, 마음을 읽는 시간</span>
-        <img src="/assets/decor-right.png" alt="" />
+        <img src="/assets/home-footer-star-divider2.svg" alt="" />
       </p>
 
       <AppBottomNavigation active="home" />
