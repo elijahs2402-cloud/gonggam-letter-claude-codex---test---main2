@@ -6,6 +6,7 @@ import { unreadNotificationCount } from "./notifications"
 import { navigateTo } from "./navigation"
 import { getReadCardPath } from "./waitingLetters";
 import styles from "./HomeRuledScreen.module.css";
+import refined from "./HomeRuledRefinedScreen.module.css";
 
 // 피그마 168-316 시안(괘선 2단 + 어두운 골동품 가구)에 '옅은 면'을 더한 홈.
 // 기존 /home 은 건드리지 않고 이 라우트에서만 비교한다.
@@ -38,7 +39,9 @@ const CHOICES = [
   },
 ] as const
 
-export function HomeRuledScreen() {
+export function HomeRuledScreen({ isRefined = false, refinedCardsOnly = false }: { isRefined?: boolean; refinedCardsOnly?: boolean }) {
+  const useRefinedCards = isRefined || refinedCardsOnly
+  const homePath = isRefined ? "/home-ruled-refined" : refinedCardsOnly ? "/home-ruled-refined-cards" : "/home-ruled"
   const [isScrolled, setIsScrolled] = useState(false)
   const userId = getCurrentUserId()
   const name = getCurrentAnonymousName()
@@ -58,7 +61,7 @@ export function HomeRuledScreen() {
           : null
 
   return (
-    <main className={`mobile-prototype home-screen home-ruled-screen ${styles.screen}`}>
+    <main className={`mobile-prototype home-screen home-ruled-screen ${styles.screen}${isRefined ? ` ${refined.screen}` : refinedCardsOnly ? ` ${refined.cardsOnly}` : ""}`}>
       <div className={`home-heading-top ${styles.headingTop}${isScrolled ? ` ${styles.scrolled}` : ""}`}>
         <p className="home-brand">공감편지</p>
         <button
@@ -73,7 +76,7 @@ export function HomeRuledScreen() {
 
       {previewNotice && (
         <aside className="home-notice-card" role="status">
-          <button className="home-notice-dismiss" type="button" aria-label="소식 닫기" onClick={() => navigateTo("/home-ruled")}>×</button>
+          <button className="home-notice-dismiss" type="button" aria-label="소식 닫기" onClick={() => navigateTo(homePath)}>×</button>
           <span className="home-notice-copy">
             <strong>{previewNotice.title}</strong>
             {previewNotice.time && <span className={`home-notice-countdown${noticePreview === "notice-expiring" ? " is-over" : ""}`}>{previewNotice.time}</span>}
@@ -84,7 +87,7 @@ export function HomeRuledScreen() {
       )}
 
       <div
-        className={`home-scroll-region ${styles.scroll}`}
+        className={`home-scroll-region ${styles.scroll}${useRefinedCards ? ` ${refined.scroll}` : ""}`}
         onScroll={(event) => setIsScrolled(event.currentTarget.scrollTop > 4)}
       >
         <header className="home-heading">
@@ -96,16 +99,16 @@ export function HomeRuledScreen() {
           <p className="home-heading-helper">지금 마음이 향하는 쪽을 골라주세요.</p>
         </header>
 
-        <section className={styles.choices} aria-label="오늘의 선택">
+        <section className={`${styles.choices}${useRefinedCards ? ` ${refined.choices}` : ""}`} aria-label="오늘의 선택">
           {CHOICES.map((choice) => (
             <button
               key={choice.key}
-              className={styles.choice}
+              className={`${styles.choice}${useRefinedCards ? ` ${refined.choice}` : ""}`}
               type="button"
               aria-label={choice.label}
               onClick={() => navigateTo(choice.key === "read" ? getReadCardPath(userId) : choice.path)}
             >
-              <img className={styles.icon} src={choice.icon} alt="" />
+              {!useRefinedCards && <img className={styles.icon} src={choice.icon} alt="" />}
               <strong>
                 {choice.title[0]}
                 <br />
@@ -121,14 +124,16 @@ export function HomeRuledScreen() {
           ))}
         </section>
 
-      <p className={`${styles.footer} ${styles.scrollFooter}`}>
+        {isRefined && <div className={refined.scene} aria-hidden="true" />}
+
+      <p className={`${styles.footer} ${styles.scrollFooter}${useRefinedCards ? ` ${refined.footer}` : ""}`}>
           <img src="/assets/home-footer-star-divider1.svg" alt="" />
           <span>마음을 쓰고, 마음을 읽는 시간</span>
           <img src="/assets/home-footer-star-divider2.svg" alt="" />
         </p>
       </div>
 
-      <p className={`${styles.footer} ${styles.fixedFooter}`}>
+      <p className={`${styles.footer} ${styles.fixedFooter}${useRefinedCards ? ` ${refined.hidden}` : ""}`}>
         <img src="/assets/home-footer-star-divider1.svg" alt="" />
         <span>마음을 쓰고, 마음을 읽는 시간</span>
         <img src="/assets/home-footer-star-divider2.svg" alt="" />
