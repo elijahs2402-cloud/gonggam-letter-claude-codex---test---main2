@@ -7420,7 +7420,8 @@ html[data-ios-standalone="true"] .intro-copy {
 .figma-report-screen h1 { margin: 0; color: var(--ink); font-family: var(--font-serif); font-size: var(--fs-title); font-weight: var(--fw-title); line-height: var(--lh-title); letter-spacing: -0.035em; }
 .figma-report-screen > header p { margin: 13px 0 0; color: var(--muted-ink); font-family: var(--font-sans); font-size: 14px; line-height: 1.7; }
 .figma-report-screen fieldset { margin: 20px 0 0; padding: 0; border: 0; }
-.figma-report-screen legend, .figma-report-detail > label { display: block; color: var(--muted-ink); font-size: 12px; font-weight: 600; letter-spacing: -.03em; }
+.figma-report-screen legend { display: block; color: var(--muted-ink); font-size: 12px; font-weight: 600; letter-spacing: -.03em; }
+.figma-report-detail > label { display: block; color: var(--muted-ink); font-size: 14px; font-weight: 600; letter-spacing: -.03em; }
 .figma-report-screen fieldset label { min-height: 47px; display: flex; align-items: center; gap: 12px; padding: 13px 4px; border-bottom: 1px solid rgba(var(--ink-rgb), var(--a10)); color: var(--ink); font-size: var(--fs-body-sm); cursor: pointer; }
 .figma-report-screen fieldset label:first-of-type { margin-top: 8px; }
 .figma-report-screen fieldset label:last-of-type { border-bottom: 0; }
@@ -7429,10 +7430,8 @@ html[data-ios-standalone="true"] .intro-copy {
 .figma-report-screen fieldset label.is-selected span { color: var(--deep-plum); font-weight: 700; }
 .figma-report-detail { position: relative; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(var(--gold-rgb), var(--a20)); }
 .figma-report-detail > label { display: block; margin-bottom: 20px; }
-/* iOS는 16px 미만의 입력 글자를 포커스할 때 페이지를 자동 확대한다.
-   신고 상세만 14px이라 확대된 visual viewport가 하단 액션 바까지 흔들었으므로,
-   다른 편지 작성 textarea와 같은 최소 입력 크기로 맞춘다. */
-.figma-report-detail textarea { box-sizing: border-box; width: 100%; height: 85px; padding: 12px; resize: vertical; border: 1px solid rgba(var(--gold-rgb), var(--a50)); border-radius: 0; outline: 0; background: rgba(var(--surface-card-rgb), var(--a50)); color: var(--ink); font: 400 16px/1.55 var(--font-sans); }
+/* 신고 사유의 안내·입력 텍스트를 같은 14px 조판으로 맞춘다. */
+.figma-report-detail textarea { box-sizing: border-box; width: 100%; height: 85px; padding: 12px; resize: vertical; border: 1px solid rgba(var(--gold-rgb), var(--a50)); border-radius: 0; outline: 0; background: rgba(var(--surface-card-rgb), var(--a50)); color: var(--ink); font: 400 14px/1.55 var(--font-sans); }
 .figma-report-detail textarea:focus { border-color: var(--deep-plum); }
 .figma-report-detail small { display: block; margin-top: 5px; color: var(--faint-ink); font-size: 12px; text-align: right; }
 .figma-report-setting { display: flex; gap: 12px; margin-top: 10px; padding: 14px; border: 1px solid rgba(var(--gold-rgb), var(--a20)); border-radius: 0; background: rgba(var(--surface-card-rgb), var(--a50)); cursor: pointer; }
