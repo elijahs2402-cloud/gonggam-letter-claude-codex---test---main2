@@ -291,6 +291,11 @@
 
 /* iPhone SE portrait-sized viewports, including the original 320px model. */
 @media (orientation: portrait) and (max-width: 376px) and (max-height: 668px) {
+  /* SE에서는 가구의 시작점이 더 낮은 03 시안을 써 카드와 장면을 분리한다. */
+  .cardsOnly.cardsOnly.cardsOnly {
+    background-image: url("/assets/home-cards-room-03.jpg") !important;
+  }
+
   /* SE에서는 원본 배경의 러그 끝점(표시 크기 기준)을 기준으로 문구까지
      24px을 맞춘다. 문구·내비 간격은 그대로 두고 배경만 18px 더 내린다. */
   .cardsOnly.cardsOnly.cardsOnly {
