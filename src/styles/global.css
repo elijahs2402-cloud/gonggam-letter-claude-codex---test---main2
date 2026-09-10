@@ -7429,7 +7429,10 @@ html[data-ios-standalone="true"] .intro-copy {
 .figma-report-screen fieldset label.is-selected span { color: var(--deep-plum); font-weight: 700; }
 .figma-report-detail { position: relative; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(var(--gold-rgb), var(--a20)); }
 .figma-report-detail > label { display: block; margin-bottom: 20px; }
-.figma-report-detail textarea { box-sizing: border-box; width: 100%; height: 85px; padding: 12px; resize: vertical; border: 1px solid rgba(var(--gold-rgb), var(--a50)); border-radius: 0; outline: 0; background: rgba(var(--surface-card-rgb), var(--a50)); color: var(--ink); font: var(--fs-body-sm)/1.55 var(--font-sans); }
+/* iOS는 16px 미만의 입력 글자를 포커스할 때 페이지를 자동 확대한다.
+   신고 상세만 14px이라 확대된 visual viewport가 하단 액션 바까지 흔들었으므로,
+   다른 편지 작성 textarea와 같은 최소 입력 크기로 맞춘다. */
+.figma-report-detail textarea { box-sizing: border-box; width: 100%; height: 85px; padding: 12px; resize: vertical; border: 1px solid rgba(var(--gold-rgb), var(--a50)); border-radius: 0; outline: 0; background: rgba(var(--surface-card-rgb), var(--a50)); color: var(--ink); font: 400 16px/1.55 var(--font-sans); }
 .figma-report-detail textarea:focus { border-color: var(--deep-plum); }
 .figma-report-detail small { display: block; margin-top: 5px; color: var(--faint-ink); font-size: 12px; text-align: right; }
 .figma-report-setting { display: flex; gap: 12px; margin-top: 10px; padding: 14px; border: 1px solid rgba(var(--gold-rgb), var(--a20)); border-radius: 0; background: rgba(var(--surface-card-rgb), var(--a50)); cursor: pointer; }
@@ -8592,8 +8595,8 @@ html[data-ios-standalone="true"] .intro-copy {
 .home-screen .home-choice--primary {
   min-height: 0;
   height: clamp(280px, 42dvh, 360px);
-  /* ④ 카드 안 여백을 척도에 맞춘다 (15/12px → 20/16px) */
-  padding: 14px 16px var(--card-pad);   /* 윗여백만 14px — 01/02 를 올렸다 */
+  /* 카드 상단에 한 호흡을 더 주되, 좁은 두 칸의 읽기 폭은 그대로 보존한다. */
+  padding: 18px 16px var(--card-pad);
 }
 
 /* 좁은 화면(갤럭시 S24 360px 등)에서만 좌우 여백을 12px 로 줄인다.
@@ -8610,8 +8613,15 @@ html[data-ios-standalone="true"] .intro-copy {
   }
 }
 
-/* ③ 선택을 돕는 문장은 캡션이 아니라 본문 */
+/* ③ 선택을 돕는 문장은 캡션이 아니라 본문.
+   제목 → 보조문 → 화살표를 일정한 리듬으로 묶어, 두 카드가 독립된 행동으로 읽히게 한다. */
+.home-screen .home-choice-copy {
+  gap: 0;
+  margin-top: 14px;
+}
+
 .home-screen .home-choice-copy span {
+  margin-top: 13px;
   font-size: 13px;
   line-height: var(--lh-snug);
 }
@@ -8659,8 +8669,8 @@ html[data-ios-standalone="true"] .intro-copy {
   width: 100%;
   /* 카드가 커진 만큼 그림까지 커지면 글자와의 간격은 그대로다.
      위를 20px 비워 그림을 아래로 붙이고 글자와의 숫프를 만든다. */
-  margin-top: 20px;
-  height: calc(100% - 20px);
+  margin-top: 14px;
+  height: calc(100% - 14px);
   min-height: 0;
   align-self: end;
   object-fit: contain;

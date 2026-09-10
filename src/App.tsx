@@ -437,7 +437,7 @@ export function App() {
     return <AuthGateRedirect to="/home" />;
   }
 
-  const protectedPaths = new Set(["/home", "/home-ruled", "/home-ruled-focus", "/home-scene", "/home-cards", "/home-horizontal-band", "/home-horizontal-frame", "/write-letter", "/listen-entry-a", "/waiting-letters", "/mailbox", "/my-space", "/saved-excerpts", "/received-replies", "/anonymous-name-settings", "/account-settings", "/login-information", "/data-and-privacy", "/account-withdrawal", "/notifications", "/notification-settings", "/safety-management", "/service-guide", "/safety-guide", "/privacy-policy", "/app-info", "/prototype/mailbox-list-lab", "/prototype/waiting-letters-list-lab", "/letter-safety-review"]);
+  const protectedPaths = new Set(["/home", "/home-backup", "/home-ruled", "/home-ruled-focus", "/home-scene", "/home-cards", "/home-horizontal-band", "/home-horizontal-frame", "/write-letter", "/listen-entry-a", "/waiting-letters", "/mailbox", "/my-space", "/saved-excerpts", "/received-replies", "/anonymous-name-settings", "/account-settings", "/login-information", "/data-and-privacy", "/account-withdrawal", "/notifications", "/notification-settings", "/safety-management", "/service-guide", "/safety-guide", "/privacy-policy", "/app-info", "/prototype/mailbox-list-lab", "/prototype/waiting-letters-list-lab", "/letter-safety-review"]);
   const protectedFlowPrefixes = ["/gratitude/", "/report-reply/", "/return-letter/", "/reply-safety-review/", "/reply-sending/", "/report-letter/", "/report-letter-figma/", "/report-letter-legacy/", "/read-letter/", "/assigned-letter/", "/assign-letter/", "/write-reply/", "/reply-review/", "/reply-sent/", "/letter-journey/", "/reply-arrived/", "/letter-withdrawn/", "/mailbox/my/", "/mailbox/replied/"];
   const isProtectedServicePath = protectedPaths.has(path) || ["/letter-preview", "/letter-sent", "/reader-promise", "/urgent-support"].includes(path) || protectedFlowPrefixes.some((prefix) => path.startsWith(prefix));
   if ((isProtectedServicePath || path === "/home-ruled-refined" || path === "/home-ruled-refined-cards") && !isMockAuthenticated()) {
@@ -457,7 +457,8 @@ export function App() {
   if (path === "/home-ruled-focus") return <HomeRuledFocusScreen />;
   if (path === "/home-horizontal-band") return <HomeHorizontalBandScreen />;
   if (path === "/home-horizontal-frame") return <HomeHorizontalFrameScreen />;
-  if (path === "/home") return <HomeScreen />;
+  if (path === "/home-backup") return <HomeScreen />;
+  if (path === "/home") return <HomeRuledScreen refinedCardsOnly />;
   if (path === "/my-space") return <MySpaceScreen />;
   if (path === "/saved-excerpts") return <SavedExcerptsScreen />;
   if (path === "/received-replies") return <ReceivedRepliesScreen />;
